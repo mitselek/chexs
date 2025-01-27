@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 from hex import Hex
 from piece import Piece
 from piece_moves import * # Import all piece movement functions
 from copy import deepcopy
+from utils import format_piece
 
 class Board:
     """
@@ -163,26 +165,51 @@ class Board:
         return True
 
     def __repr__(self):
-        """Returns a string representation of the board for visualization.
-        
-        Format:
-        - Each piece is shown as '{color[0]}{type}' (e.g., 'wP' for white pawn)
-        - Empty spaces are shown as '.'
-        - The board is displayed in rows from -BOARD_RADIUS to +BOARD_RADIUS
-        - Each row shows valid hexes within the hexagonal board shape
-        
-        Returns:
-            str: A multi-line string showing the current board state
+        """Returns an unambiguous string representation of the board (for debugging)."""
+        pieces = [f"{pos}:{piece.type}{piece.color[0]}" for pos, piece in self.board.items()]
+        return f"Board({len(pieces)} pieces, current_player='{self.current_player}')"
+
+    def display(self, use_unicode=True, show_coords=False, use_colors=True):
+        """Returns a formatted string representation of the board.
+
+        Args:
+            use_unicode (bool): Whether to use Unicode chess symbols
+            show_coords (bool): Whether to show coordinates
+            use_colors (bool): Whether to use ANSI colors in terminal output
         """
-        output = ""
-        for q in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
-            for r in range(max(-self.BOARD_RADIUS, -q-self.BOARD_RADIUS), 
-                         min(self.BOARD_RADIUS + 1, -q+self.BOARD_RADIUS + 1)):
-                hex = Hex(q, r, -q-r)
-                piece = self.get_piece(hex)
-                if piece:
-                    output += str(piece) + " "
+        output = "     " + "----" * (self.BOARD_RADIUS + 1) + "\n"
+        for r in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
+            output += "  " * (self.BOARD_RADIUS - r) + "| "
+            for q in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
+                s = -q - r
+                if abs(q) <= self.BOARD_RADIUS and abs(r) <= self.BOARD_RADIUS and abs(s) <= self.BOARD_RADIUS:
+                    hex = Hex(q, r, s)
+                    piece = self.get_piece(hex)
+                    if piece:
+                        output += format_piece(str(piece), use_unicode, use_colors) + " "
+                    else:
+                        output += "· "
                 else:
-                    output += ". "
-            output += "\n"
+                    output += "  "
+            output += "|\n"
+        output += "     " + "----" * (self.BOARD_RADIUS + 1) + "\n"
         return output
+
+    def __str__(self):
+        """Returns a formatted string representation of the board."""
+        return self.display()
+
+def print_board(board, use_unicode=True, show_coords=False):
+    """Returns a formatted string representation of the board."""
+    output = ""
+    for q in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
+        for r in range(max(-board.BOARD_RADIUS, -q-board.BOARD_RADIUS), 
+                     min(board.BOARD_RADIUS + 1, -q+board.BOARD_RADIUS + 1)):
+            hex = Hex(q, r, -q-r)
+            piece = board.get_piece(hex)
+            if piece:
+                output += str(piece) + " "
+            else:
+                output += ". "
+        output += "\n"
+    return output

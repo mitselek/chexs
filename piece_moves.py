@@ -1,4 +1,4 @@
-from hex import Hex, hex_directions, hex_diagonals
+from hex import Hex, hex_directions
 from piece import Piece  # Ensure to import Piece class
 import math
 
