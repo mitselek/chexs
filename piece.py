@@ -1,55 +1,34 @@
+from dataclasses import dataclass, replace
+from typing import Literal
+from hex import Hex
+
+@dataclass(frozen=True)
 class Piece:
     """
-    Represents a chess piece.
+    Represents an immutable chess piece.
+    
+    Attributes:
+        type: The piece type (P=pawn, R=rook, N=knight, B=bishop, Q=queen, K=king)
+        color: The piece color (white or black)
+        position: Current position on the board
+        has_moved: Whether the piece has moved (for pawns and castling)
     """
-    def __init__(self, type, color, position):
-        """
-        Initializes a Piece object.
+    type: Literal["P", "R", "N", "B", "Q", "K"]
+    color: Literal["white", "black"]
+    position: Hex
+    has_moved: bool = False
 
+    def move(self, new_position: Hex) -> 'Piece':
+        """Create a new piece at the new position with has_moved=True.
+        
         Args:
-          type: The piece type (e.g., "P", "R", "N", "B", "Q", "K").
-          color: The piece color ("white" or "black").
-          position: A Hex object representing the piece's location.
+            new_position: The new position for the piece
+            
+        Returns:
+            A new Piece instance at the new position with has_moved=True
+        """
+        return replace(self, position=new_position, has_moved=True)
 
-        Raises:
-            ValueError: If the type is not valid.
-            ValueError: If the color is not valid.
-        """
-        valid_types = {"P", "R", "N", "B", "Q", "K"}
-        if type not in valid_types:
-          raise ValueError(f"Invalid piece type: {type}")  # More informative error message
-        valid_colors = {"white", "black"}
-        if color not in valid_colors:
-          raise ValueError(f"Invalid piece color: {color}")  # More informative error message
-        self.type = type
-        self.color = color
-        self.position = position
-        self.has_moved = False
-
-    def __repr__(self):
-        """
-        Returns a string representation of the piece.
-        """
+    def __str__(self) -> str:
+        """Return the piece's string representation (e.g., 'wP' for white pawn)."""
         return f"{self.color[0]}{self.type}"
-
-    def move(self, new_position):
-        """
-        Moves the piece to a new position.
-
-        Args:
-            new_position: A Hex object representing the new position.
-        """
-        self.position = new_position
-        self.has_moved = True
-
-    def __eq__(self, other):
-        """Checks if two pieces are equal."""
-        if not isinstance(other, Piece):
-            return False
-        return (self.type == other.type and
-                self.color == other.color and
-                self.position == other.position)
-
-    def __hash__(self):
-        """Returns a hash value for the Piece object."""
-        return hash((self.type, self.color, self.position))

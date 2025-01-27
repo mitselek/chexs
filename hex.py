@@ -1,8 +1,17 @@
+# hex.py
+"""
+Provides classes and functions for representing and manipulating hexagonal coordinates.
+"""
+
 import math
 
 class Hex:
     """
-    Represents a single hexagon on the board using cubic coordinates.
+    Represents a hexagonal coordinate using axial coordinates (q, r).
+
+    Attributes:
+        q (int): The q coordinate.
+        r (int): The r coordinate.
     """
     def __init__(self, q, r, s):
         """
@@ -51,40 +60,88 @@ class Hex:
         return (self.q, self.r, self.s)
 
     def get_color(self):
-        """
-        Calculates and returns the color of the hex.
-
+        """Calculates and returns the color of the hex.
+        
         Returns:
-          A string representing the color of the hex.
+            str: A string representing the color of the hex ("green", "blue", or "red").
+            
+        Raises:
+            ValueError: If coordinates are not valid integers.
         """
-        color_index = (self.q + self.r + self.s) % 3
-        colors = ["green", "blue", "red"]
-        return colors[color_index]
+        try:
+            color_index = (int(self.q) + int(self.r) + int(self.s)) % 3
+            colors = ["green", "blue", "red"]
+            return colors[color_index]
+        except (TypeError, ValueError):
+            raise ValueError("Coordinates must be valid integers")
 
     def __add__(self, other):
-        """Add two Hex objects or a Hex and a direction tuple."""
+        """Add a hex to another hex or direction tuple.
+        
+        Args:
+            other: Either a Hex object or a tuple of (q, r, s) coordinates
+
+        Returns:
+            Hex: A new hex representing the sum
+            
+        Raises:
+            TypeError: If other is neither Hex nor tuple
+            ValueError: If tuple does not have exactly 3 integer coordinates
+        """
         if isinstance(other, tuple):
-            return Hex(self.q + other[0], self.r + other[1], self.s + other[2])
+            if len(other) != 3:
+                raise ValueError("Direction tuple must have exactly 3 coordinates")
+            try:
+                return Hex(self.q + int(other[0]), 
+                         self.r + int(other[1]), 
+                         self.s + int(other[2]))
+            except (TypeError, ValueError):
+                raise ValueError("Direction coordinates must be integers")
         if isinstance(other, Hex):
             return Hex(self.q + other.q, self.r + other.r, self.s + other.s)
-        return NotImplemented # Important for correct type handling
+        raise TypeError(f"Cannot add Hex and {type(other).__name__}")
 
     def __sub__(self, other):
-        """Subtract two Hex objects."""
+        """Subtract one hex from another.
+        
+        Args:
+            other: A Hex object to subtract
+
+        Returns:
+            Hex: A new hex representing the difference
+            
+        Raises:
+            TypeError: If other is not a Hex object
+        """
         if isinstance(other, Hex):
             return Hex(self.q - other.q, self.r - other.r, self.s - other.s)
         return NotImplemented
 
     def __abs__(self):
-        """Returns the Manhattan distance from origin to this hex."""
+        """Calculate the Manhattan distance from origin to this hex.
+        
+        Returns:
+            int: The distance in hex steps
+        """
         return (abs(self.q) + abs(self.r) + abs(self.s)) // 2
 
     def normalize(self):
-        """Returns normalized direction vector as Hex."""
-        gcd = math.gcd(math.gcd(abs(self.q), abs(self.r)), abs(self.s))
-        if gcd == 0:
-            return Hex(0, 0, 0)
-        return Hex(self.q//gcd, self.r//gcd, self.s//gcd)
+        """Normalize the hex vector to its smallest equivalent direction.
+        
+        Returns:
+            Hex: A new hex with same direction but minimal coordinates.
+            
+        Raises:
+            ValueError: If coordinates are not valid integers.
+        """
+        try:
+            coordinates = [abs(int(self.q)), abs(int(self.r)), abs(int(self.s))]
+            gcd = math.gcd(math.gcd(coordinates[0], coordinates[1]), coordinates[2])
+            if gcd == 0:
+                return Hex(0, 0, 0)
+            return Hex(self.q//gcd, self.r//gcd, self.s//gcd)
+        except (TypeError, ValueError):
+            raise ValueError("Coordinates must be valid integers")
 
     def __repr__(self):
         return f"Hex({self.q}, {self.r}, {self.s})"
@@ -101,6 +158,19 @@ hex_directions = [
 ]
 
 def hex_distance(hex1, hex2):
-    """Calculates the distance between two Hex objects."""
-    return abs(hex1 - hex2)  # Now uses __abs__ and __sub__
+    """Calculate the distance between two hex positions.
+    
+    Args:
+        hex1: First hex position
+        hex2: Second hex position
+        
+    Returns:
+        int: The number of steps from hex1 to hex2
+        
+    Raises:
+        TypeError: If either argument is not a Hex object
+    """
+    if not isinstance(hex1, Hex) or not isinstance(hex2, Hex):
+        raise TypeError("Both arguments must be Hex objects")
+    return abs(hex1 - hex2)
 

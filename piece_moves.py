@@ -21,6 +21,18 @@ def get_bishop_moves(board, piece):
     return moves
 
 def get_knight_moves(board, piece):
+    """Calculate all valid moves for a knight.
+    
+    A knight moves in an L-shape pattern: 2 steps in one direction, then 1 step 
+    at a 120-degree angle.
+    
+    Args:
+        board: The game board
+        piece: The knight piece to move
+        
+    Returns:
+        set: Valid destination hexes for the knight
+    """
     moves = set()
     for d1_index, d1 in enumerate(hex_directions):
         for d2_index in [(d1_index + 2) % 6, (d1_index + 4) % 6]:
@@ -33,6 +45,18 @@ def get_knight_moves(board, piece):
     return moves
 
 def get_rook_moves(board, piece):
+    """Calculate all valid moves for a rook.
+    
+    A rook moves any number of steps along the six primary hex directions.
+    Movement is blocked by other pieces.
+    
+    Args:
+        board: The game board
+        piece: The rook piece to move
+        
+    Returns:
+        set: Valid destination hexes for the rook
+    """
     moves = set()
     for direction in hex_directions:
         current = piece.position
@@ -49,9 +73,31 @@ def get_rook_moves(board, piece):
     return moves
 
 def get_queen_moves(board, piece):
+    """Calculate all valid moves for a queen.
+    
+    A queen combines rook and bishop movements.
+    
+    Args:
+        board: The game board
+        piece: The queen piece to move
+        
+    Returns:
+        set: Valid destination hexes for the queen
+    """
     return get_rook_moves(board, piece) | get_bishop_moves(board, piece)
 
 def get_king_moves(board, piece):
+    """Calculate all valid moves for a king.
+    
+    A king moves one step in any of the six primary hex directions.
+    
+    Args:
+        board: The game board
+        piece: The king piece to move
+        
+    Returns:
+        set: Valid destination hexes for the king
+    """
     moves = set()
     for direction in hex_directions:
         move = piece.position + direction  # Using __add__
@@ -62,6 +108,18 @@ def get_king_moves(board, piece):
     return moves
 
 def get_pawn_moves(board, piece):
+    """Calculate all valid moves for a pawn.
+    
+    Pawns move forward one step (or two on first move) and capture
+    diagonally forward.
+    
+    Args:
+        board: The game board
+        piece: The pawn piece to move
+        
+    Returns:
+        set: Valid destination hexes for the pawn
+    """
     moves = set()
     forward = hex_directions[0] if piece.color == "white" else hex_directions[3]
     one_step = piece.position + forward  # Using __add__
