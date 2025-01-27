@@ -229,7 +229,7 @@ class Board:
         
         # Check nearby squares for enemy king
         for direction in hex_directions:
-            adjacent = king_pos + Hex(*direction)
+            adjacent = king_pos + direction
             if (self.is_valid_hex(adjacent) and 
                 (piece := self.get_piece(adjacent)) and 
                 piece.type == "K" and piece.color == opponent):
@@ -237,7 +237,7 @@ class Board:
 
         # Check pawn attacks
         for direction in self.PAWN_ATTACKS[opponent]:
-            attack_pos = king_pos + Hex(*direction)
+            attack_pos = king_pos + direction
             if (self.is_valid_hex(attack_pos) and 
                 (piece := self.get_piece(attack_pos)) and 
                 piece.type == "P" and piece.color == opponent):
@@ -245,7 +245,7 @@ class Board:
 
         # Check knight attacks using precomputed patterns
         for d1, d2 in self.KNIGHT_PATTERNS:
-            attack_pos = king_pos + Hex(*d1) + Hex(*d2)
+            attack_pos = king_pos + d1 + d2
             if (self.is_valid_hex(attack_pos) and 
                 (piece := self.get_piece(attack_pos)) and 
                 piece.type == "N" and piece.color == opponent):
@@ -255,7 +255,7 @@ class Board:
         for direction in hex_directions:
             current = king_pos
             while True:
-                current = current + Hex(*direction)
+                current = current + direction
                 if not self.is_valid_hex(current):
                     break
                     
@@ -269,7 +269,7 @@ class Board:
         for direction in self.BISHOP_DIRECTIONS:
             current = king_pos
             while True:
-                current = current + Hex(*direction)
+                current = current + direction
                 if not self.is_valid_hex(current):
                     break
                     
@@ -313,10 +313,18 @@ class Board:
         return True
 
     def evaluate_position(self) -> int:
-        """Evaluates the board position based on piece values, proximity to the center, mobility, and king exposure.
+        """Evaluates the board position based on several factors:
         
+        - Piece values: Each piece type has a specific value (e.g., pawn = 1, queen = 9).
+        - Proximity to the center: Pieces closer to the center receive bonus points.
+        - Mobility: The number of legal moves available for each piece.
+        - King exposure: Penalty points for each missing friendly piece around the king.
+        
+        The evaluation score is positive if the current player has an advantage,
+        and negative if the opponent has an advantage.
+
         Returns:
-            int: The evaluation score (positive for current player, negative for opponent)
+            int: The evaluation score (positive for current player, negative for opponent).
         """
         score = 0
         center = Hex(0, 0, 0)
