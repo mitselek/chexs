@@ -31,15 +31,16 @@ class Board:
     }
     
     ROOK_DIRECTIONS = set(hex_directions)  # All 6 primary directions
-    BISHOP_DIRECTIONS = [
-        (hex_directions[0][0] + hex_directions[1][0], hex_directions[0][1] + hex_directions[1][1], hex_directions[0][2] + hex_directions[1][2]), # NNE
-        (hex_directions[1][0] + hex_directions[2][0], hex_directions[1][1] + hex_directions[2][1], hex_directions[1][2] + hex_directions[2][2]), # NNW
-        (hex_directions[2][0] + hex_directions[3][0], hex_directions[2][1] + hex_directions[3][1], hex_directions[2][2] + hex_directions[3][2]), # WNW
-        (hex_directions[3][0] + hex_directions[4][0], hex_directions[3][1] + hex_directions[4][1], hex_directions[3][2] + hex_directions[4][2]), # SSW
-        (hex_directions[4][0] + hex_directions[5][0], hex_directions[4][1] + hex_directions[5][1], hex_directions[4][2] + hex_directions[5][2]), # SSE
-        (hex_directions[5][0] + hex_directions[0][0], hex_directions[5][1] + hex_directions[0][1], hex_directions[5][2] + hex_directions[0][2]), # ESE
-    ]  # Diagonal directions between primary directions
-    QUEEN_DIRECTIONS = ROOK_DIRECTIONS | set(BISHOP_DIRECTIONS)  # Queens can move in all directions
+    hex_bishop_directions = [
+        hex_directions[0] + hex_directions[1],  # NE + N  = NNE
+        hex_directions[1] + hex_directions[2],  # N  + NW = NNW
+        hex_directions[2] + hex_directions[3],  # NW + SW = W
+        hex_directions[3] + hex_directions[4],  # SW + S  = SSW
+        hex_directions[4] + hex_directions[5],  # S  + SE = SSE
+        hex_directions[5] + hex_directions[0]   # SE + NE = E
+    ]    
+    BISHOP_DIRECTIONS = set(hex_bishop_directions)  # Diagonal directions between primary directions
+    QUEEN_DIRECTIONS = ROOK_DIRECTIONS | BISHOP_DIRECTIONS  # Queens can move in all directions
     
     # Knight move patterns (precomputed)
     KNIGHT_PATTERNS = [

@@ -182,6 +182,7 @@ hex_directions = [
     (1, -1, 0)   # SE
 ]
 
+
 def hex_distance(hex1, hex2):
     """Calculate the distance between two hex positions.
     
