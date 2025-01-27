@@ -5,8 +5,7 @@ import math
 def get_bishop_moves(board, piece):
     """Gets all valid bishop moves along diagonals."""
     moves = set()
-    for i in [1, 3, 5]:  # Every second direction for diagonals
-        direction = hex_directions[i]
+    for direction in board.BISHOP_DIRECTIONS:
         current = piece.position
         while True:
             current = current + direction
