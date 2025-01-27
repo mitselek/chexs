@@ -399,7 +399,7 @@ class Board:
         # Create board content - iterate from top (black) to bottom (white)
         for r in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):  # Changed iteration order
             # Calculate row indentation (reversed to match new order)
-            indent = " " * (ROW_INDENT + (self.BOARD_RADIUS + r) * 2)  # Changed sign in calculation
+            indent = " " * (ROW_INDENT + (self.BOARD_RADIUS + r) * 1)  # Changed sign in calculation
             row = []
 
             for q in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
