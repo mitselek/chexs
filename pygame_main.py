@@ -4,21 +4,27 @@ from board import Board
 from utils import format_piece
 
 # Constants
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 700
+BOARD_SIZE = 5  # Board size
 HEX_SIDE = 40  # Size of side of hexagon
 HEX_DIAGONAL = HEX_SIDE * 2
+HEX_APOTHEM = HEX_SIDE * (3 ** 0.5) / 2
 HEX_HEIGHT = (3 ** 0.5) * HEX_SIDE  # Twice the apothem of the hexagon
+
+BOARD_BORDER = 10  # Border around the board
+BOARD_PADDING = 10  # Padding between board and window edge
+WINDOW_WIDTH = ((BOARD_SIZE+1)*2+1) * HEX_SIDE * 1.5 + BOARD_PADDING * 2 + BOARD_BORDER * 2
+WINDOW_HEIGHT = ((BOARD_SIZE+1)*2+1) * HEX_HEIGHT + BOARD_PADDING * 2 + BOARD_BORDER * 2
 BOARD_OFFSET_X = WINDOW_WIDTH // 2  # Center the board horizontally
 BOARD_OFFSET_Y = WINDOW_HEIGHT // 2  # Center the board vertically
+
 
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-TILE_1_COLOR = (200, 200, 200)
-TILE_2_COLOR = (100, 100, 100)
-TILE_3_COLOR = (150, 150, 150)
-COLORS = [TILE_1_COLOR, TILE_2_COLOR, TILE_3_COLOR]
+LIGHT_WOOD = (222, 184, 135)  # Light wood color
+MEDIUM_WOOD = (160, 82, 45)   # Medium wood color
+DARK_WOOD = (101, 67, 33)     # Dark wood color
+COLORS = [LIGHT_WOOD, MEDIUM_WOOD, DARK_WOOD]
 
 def hex_to_pixel(hex):
     """Convert hex coordinates to pixel coordinates."""
@@ -31,18 +37,18 @@ def draw_hex(surface, color, hex):
     x, y = hex_to_pixel(hex)
     points = [
         (x + HEX_SIDE / 1, y),
-        (x + HEX_SIDE / 2, y + HEX_HEIGHT/2),
-        (x - HEX_SIDE / 2, y + HEX_HEIGHT/2),
+        (x + HEX_SIDE / 2, y + HEX_APOTHEM),
+        (x - HEX_SIDE / 2, y + HEX_APOTHEM),
         (x - HEX_SIDE / 1, y),
-        (x - HEX_SIDE / 2, y - HEX_HEIGHT/2),
-        (x + HEX_SIDE / 2, y - HEX_HEIGHT/2),
+        (x - HEX_SIDE / 2, y - HEX_APOTHEM),
+        (x + HEX_SIDE / 2, y - HEX_APOTHEM),
     ]
     pygame.draw.polygon(surface, color, points, 0)
     pygame.draw.polygon(surface, BLACK, points, 1)  # Thin black line around hexagon
 
     # Draw coordinates on the hex
     font = pygame.font.SysFont(None, 18)
-    coord_text = font.render(f"q{hex.q}|r{hex.r}|s{hex.s}", True, BLACK)
+    coord_text = font.render(f"q{hex.q}|r{hex.r}|s{hex.s}", True, WHITE)
     coord_rect = coord_text.get_rect(center=(x, y))
     surface.blit(coord_text, coord_rect)
 
@@ -57,7 +63,7 @@ def draw_board(surface, board):
                 color = COLORS[color_index]
                 draw_hex(surface, color, hex)
                 piece = board.get_piece(hex)
-                if piece and False:
+                if piece:
                     piece_str = str(piece)
                     piece_text = format_piece(piece_str, use_unicode=True, use_colors=False)
                     font = pygame.font.SysFont(None, 24)
