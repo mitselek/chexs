@@ -21,6 +21,7 @@ def play_game(board):
     while True:
         print(board.display())  # Display the board
         print(board.get_turn_info()) # Display turn info
+        print(f"Evaluation: {board.evaluate_position()}")  # Display evaluation score
         
         try:
             # Get random valid moves for example
