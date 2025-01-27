@@ -53,7 +53,7 @@ Represents a single hexagon on the board using cubic coordinates.
         *   `Hex`: A new `Hex` object representing the sum.
     *   Raises:
         *   `TypeError`: If `other` is neither `Hex` nor `tuple`.
-        *   `ValueError`: If tuple does not have exactly 3 integer coordinates or if direction coordinates are not integers
+        *   `ValueError`: If tuple does not have exactly 3 integer coordinates or if direction coordinates are not integers.
 
 *   `__sub__(self, other: Hex) -> Hex`: Subtracts one hex from another.
 
@@ -73,8 +73,8 @@ Represents a single hexagon on the board using cubic coordinates.
 
     *   Returns:
         *   `Hex`: A new `Hex` with the same direction but minimal coordinates. Returns (0, 0, 0) for the zero vector.
-        *   Raises:
-                ValueError: If coordinates are not valid integers.
+    *   Raises:
+        *   `ValueError`: If coordinates are not valid integers.
 
 *   `__repr__(self) -> str`: Returns a string representation of the `Hex` object.
 
@@ -115,7 +115,7 @@ Manages game state and board representation.
 
 *   `board` (Dict[`Hex`, `Piece`]): A dictionary mapping `Hex` objects to `Piece` objects.
 *   `current_player` (str): The current player's color ("white" or "black").
-*   `BOARD_RADIUS` (int): The radius of the board
+*   `BOARD_RADIUS` (int): The radius of the board.
 
 **Methods:**
 
@@ -181,3 +181,41 @@ Manages game state and board representation.
 
     *   Returns:
         *   `str`: The formatted string representation of the board.
+
+## Thinking in HEX
+
+### Challenges of Hexagonal Grids
+
+1. **Multiple Coordinate Systems**: There are several ways to represent hexagonal grids (axial/cubic, flat-topped/pointy-topped, offset coordinates). This variety can be confusing when switching between different resources or implementations.
+
+2. **Direction and Movement**: The distinction between direction (a unit vector) and movement (which can involve multiple steps) is crucial and easy to mix up.
+
+3. **Diagonal Movement**: Diagonal movement is different than in square grids. There are three sets of parallel "diagonal" lines, not just two.
+
+4. **Distance Calculation**: Calculating distances between hexes is different. Euclidean distance doesn't work directly; you need to use specific hexagonal distance formulas based on the chosen coordinate system.
+
+5. **Visual Representation**: Representing a hexagonal grid on a square screen or in text can be challenging. It often involves compromises that can obscure the true hexagonal nature of the grid.
+
+### Strategies for Thinking About Hexagonal Grids
+
+1. **Focus on the Geometry**: Visualize the hexagons themselves. Think about how they connect and the relationships between adjacent hexes.
+
+2. **Choose a Consistent Coordinate System**: Stick to one coordinate system (e.g., cubic coordinates) throughout your implementation. This avoids confusion when converting between different representations.
+
+3. **Distinguish Direction and Movement**: Be very clear about the difference between a direction vector (a unit vector representing a single step) and a movement (which can be multiple steps in a given direction).
+
+4. **Use Diagrams**: Draw diagrams! Visualizing the grid and the movements of pieces can be incredibly helpful for understanding the logic.
+
+5. **Break Down Complex Movements**: Decompose complex movements (like the bishop's two-hex jump) into sequences of single-step movements. This can help you understand how the unit vectors relate to the overall movement.
+
+6. **Test Thoroughly**: Test your code with various scenarios, especially edge cases and situations that might be counterintuitive. This helps uncover errors early on.
+
+### Specific to Bishop Movement
+
+Remember these key points:
+
+1. The bishop moves two hexes along a diagonal.
+2. The direction of that movement is represented by a unit vector.
+3. In `is_check()`, we're checking for attacks along a line using the precomputed bishop directions.
+4. In `get_possible_moves()`, we're generating actual moves, so we simulate the two-hex jump by repeatedly adding the unit vector.
+

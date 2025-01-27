@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from hex import Hex
+from hex import Hex, hex_directions
 from piece import Piece
 from piece_moves import * # Import all piece movement functions
 from copy import deepcopy
@@ -31,15 +31,15 @@ class Board:
     }
     
     ROOK_DIRECTIONS = set(hex_directions)  # All 6 primary directions
-    BISHOP_DIRECTIONS = {
-        hex_directions[0] + hex_directions[1], #NNE
-        hex_directions[1] + hex_directions[2], #NNW
-        hex_directions[2] + hex_directions[3], #WNW
-        hex_directions[3] + hex_directions[4], #SSW
-        hex_directions[4] + hex_directions[5], #SSE
-        hex_directions[5] + hex_directions[0], #ESE
-    }  # Diagonal directions between primary directions
-    QUEEN_DIRECTIONS = ROOK_DIRECTIONS | BISHOP_DIRECTIONS  # Queens can move in all directions
+    BISHOP_DIRECTIONS = [
+        (hex_directions[0][0] + hex_directions[1][0], hex_directions[0][1] + hex_directions[1][1], hex_directions[0][2] + hex_directions[1][2]), # NNE
+        (hex_directions[1][0] + hex_directions[2][0], hex_directions[1][1] + hex_directions[2][1], hex_directions[1][2] + hex_directions[2][2]), # NNW
+        (hex_directions[2][0] + hex_directions[3][0], hex_directions[2][1] + hex_directions[3][1], hex_directions[2][2] + hex_directions[3][2]), # WNW
+        (hex_directions[3][0] + hex_directions[4][0], hex_directions[3][1] + hex_directions[4][1], hex_directions[3][2] + hex_directions[4][2]), # SSW
+        (hex_directions[4][0] + hex_directions[5][0], hex_directions[4][1] + hex_directions[5][1], hex_directions[4][2] + hex_directions[5][2]), # SSE
+        (hex_directions[5][0] + hex_directions[0][0], hex_directions[5][1] + hex_directions[0][1], hex_directions[5][2] + hex_directions[0][2]), # ESE
+    ]  # Diagonal directions between primary directions
+    QUEEN_DIRECTIONS = ROOK_DIRECTIONS | set(BISHOP_DIRECTIONS)  # Queens can move in all directions
     
     # Knight move patterns (precomputed)
     KNIGHT_PATTERNS = [
@@ -171,9 +171,9 @@ class Board:
         self.current_player = "black" if self.current_player == "white" else "white"
 
         # Handle pawn promotion
-        if new_piece.type == "P":
-            if (new_piece.color == "white" and end_hex.r == self.BOARD_RADIUS) or \
-               (new_piece.color == "black" and end_hex.r == -self.BOARD_RADIUS):
+        if piece.type == "P":
+            if (piece.color == "white" and end_hex.r == self.BOARD_RADIUS) or \
+               (piece.color == "black" and end_hex.r == -self.BOARD_RADIUS):
                 self.promote_pawn(end_hex, "Q")
 
     def get_possible_moves(self, hex):
@@ -228,7 +228,7 @@ class Board:
         
         # Check nearby squares for enemy king
         for direction in hex_directions:
-            adjacent = king_pos + direction
+            adjacent = king_pos + Hex(*direction)
             if (self.is_valid_hex(adjacent) and 
                 (piece := self.get_piece(adjacent)) and 
                 piece.type == "K" and piece.color == opponent):
@@ -236,7 +236,7 @@ class Board:
 
         # Check pawn attacks
         for direction in self.PAWN_ATTACKS[opponent]:
-            attack_pos = king_pos + direction
+            attack_pos = king_pos + Hex(*direction)
             if (self.is_valid_hex(attack_pos) and 
                 (piece := self.get_piece(attack_pos)) and 
                 piece.type == "P" and piece.color == opponent):
@@ -244,7 +244,7 @@ class Board:
 
         # Check knight attacks using precomputed patterns
         for d1, d2 in self.KNIGHT_PATTERNS:
-            attack_pos = king_pos + d1 + d2
+            attack_pos = king_pos + Hex(*d1) + Hex(*d2)
             if (self.is_valid_hex(attack_pos) and 
                 (piece := self.get_piece(attack_pos)) and 
                 piece.type == "N" and piece.color == opponent):
@@ -254,7 +254,7 @@ class Board:
         for direction in hex_directions:
             current = king_pos
             while True:
-                current = current + direction
+                current = current + Hex(*direction)
                 if not self.is_valid_hex(current):
                     break
                     
@@ -268,7 +268,7 @@ class Board:
         for direction in self.BISHOP_DIRECTIONS:
             current = king_pos
             while True:
-                current = current + direction
+                current = current + Hex(*direction)
                 if not self.is_valid_hex(current):
                     break
                     
