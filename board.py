@@ -5,19 +5,57 @@ from piece_moves import * # Import all piece movement functions
 from copy import deepcopy
 from utils import format_piece, HEX_BORDERS, EMPTY_CELL, ASCII_EMPTY_CELL, get_cell_width, ROW_INDENT
 
+PIECE_VALUES = {
+    "P": 1,  # Pawn
+    "N": 3,  # Knight
+    "B": 3,  # Bishop
+    "R": 5,  # Rook
+    "Q": 9,  # Queen
+    "K": 1000, # King (very high value)
+}
+
+CENTER_BONUS = 0.1  # Bonus points per step closer to the center
+MOBILITY_BONUS = 0.05  # Bonus points per legal move
+KING_EXPOSURE_PENALTY = 0.5  # Penalty points per missing friendly piece around the king
+
 class Board:
     """
     Represents the game board and manages game state.
     """
     BOARD_RADIUS = 5  # Distance from center (0,0,0) to edge
 
+    # Attack direction constants
+    PAWN_ATTACKS = {
+        "white": [hex_directions[1], hex_directions[5]],  # N, NW
+        "black": [hex_directions[3], hex_directions[4]],  # S, SW
+    }
+    
+    ROOK_DIRECTIONS = set(hex_directions)  # All 6 primary directions
+    BISHOP_DIRECTIONS = {
+        hex_directions[0] + hex_directions[1], #NNE
+        hex_directions[1] + hex_directions[2], #NNW
+        hex_directions[2] + hex_directions[3], #WNW
+        hex_directions[3] + hex_directions[4], #SSW
+        hex_directions[4] + hex_directions[5], #SSE
+        hex_directions[5] + hex_directions[0], #ESE
+    }  # Diagonal directions between primary directions
+    QUEEN_DIRECTIONS = ROOK_DIRECTIONS | BISHOP_DIRECTIONS  # Queens can move in all directions
+    
+    # Knight move patterns (precomputed)
+    KNIGHT_PATTERNS = [
+        (d1, d2) for d1_index, d1 in enumerate(hex_directions)
+        for d2_index in [(d1_index + 2) % 6, (d1_index + 4) % 6]
+        for d2 in [hex_directions[d2_index]]
+    ]
+
     def __init__(self):
-        """
-        Initializes the board and sets up the pieces.
-        """
+        """Initializes the board and sets up the pieces."""
         self.board = {}  # Dictionary: {Hex: Piece}
+        self._king_positions = {"white": None, "black": None}  # Initialize before setup_board
         self.current_player = "white"
-        self.setup_board()
+        self.move_number = 1  # Start at move 1
+        self.moves_history = []  # List of (start_hex, end_hex) tuples
+        self.setup_board()  # Call setup_board last
 
     def is_valid_hex(self, hex):
         """Checks if a hex is within the board boundaries and forms a valid hexagonal shape.
@@ -95,6 +133,11 @@ class Board:
             Hex(3, 1, -4): Piece("P", "black", Hex(3, 1, -4)),    # Pawn
             Hex(4, 1, -5): Piece("P", "black", Hex(4, 1, -5)),    # Pawn
         }
+        
+        # Initialize king position cache
+        for hex, piece in self.board.items():
+            if piece.type == "K":
+                self._king_positions[piece.color] = hex
 
     def is_occupied(self, hex):
         """Checks if a hex is occupied by a piece."""
@@ -105,19 +148,50 @@ class Board:
         return self.board.get(hex)
 
     def move_piece(self, start_hex, end_hex):
-        """Moves a piece from one hex to another."""
-        piece = self.board.pop(start_hex)
-        piece.move(end_hex)
-        self.board[end_hex] = piece
+        """Moves a piece from one hex to another and updates game state."""
+        piece = self.get_piece(start_hex)
+        if piece.color != self.current_player:
+            raise ValueError(f"It's {self.current_player}'s turn to move")
+
+        # Update board
+        self.board[end_hex] = self.board.pop(start_hex).move(end_hex)
+        
+        # Update king position if king moved
+        if piece.type == "K":
+            self._king_positions[piece.color] = end_hex
+        
+        # Record the move
+        self.moves_history.append((start_hex, end_hex))
+        
+        # Update turn counter if black just moved
+        if self.current_player == "black":
+            self.move_number += 1
+            
+        # Switch current player
         self.current_player = "black" if self.current_player == "white" else "white"
 
-        # Promotion logic
-        if piece.type == "P":
-            if (piece.color == "white" and end_hex.r == 4) or (piece.color == "black" and end_hex.r == -4):
-                self.promote_pawn(end_hex, "Q")  # Promote at the end hex
+        # Handle pawn promotion
+        if new_piece.type == "P":
+            if (new_piece.color == "white" and end_hex.r == self.BOARD_RADIUS) or \
+               (new_piece.color == "black" and end_hex.r == -self.BOARD_RADIUS):
+                self.promote_pawn(end_hex, "Q")
 
     def get_possible_moves(self, hex):
-        """Returns a set of legal moves for the piece at the given hex."""
+        """Returns a set of legal moves for the piece at the given hex.
+        
+        Args:
+            hex: The hex position to check for possible moves
+
+        Returns:
+            set[Hex]: A set of legal destination hexes for the piece.
+            Returns an empty set if:
+            - The hex is empty
+            - The piece belongs to the non-current player
+            - The piece has no legal moves
+
+        Note:
+            This method does not account for moves that would leave the king in check.
+        """
         piece = self.get_piece(hex)
         if piece is None or piece.color != self.current_player:
             return set()
@@ -134,57 +208,95 @@ class Board:
             return move_functions[piece.type](self, piece)
         return set()
 
-    def is_check(self, color):
-        """Checks if the given color's king is in check."""
-        # Find king position
-        king_pos = None
-        for hex, piece in self.board.items():
-            if piece.type == "K" and piece.color == color:
-                king_pos = hex
-                break
-        if king_pos is None:
+    def is_check(self, color: str) -> bool:
+        """Checks if the given color's king is in check.
+        
+        Uses precomputed attack patterns for efficiency.
+        Short-circuits as soon as check is detected.
+        
+        Args:
+            color: The color ("white" or "black") to check
+
+        Returns:
+            bool: True if king is in check, False otherwise
+        """
+        king_pos = self._king_positions.get(color)
+        if not king_pos:
             return False
 
-        opponent_color = "black" if color == "white" else "white"
+        opponent = "black" if color == "white" else "white"
         
-        # Check pawns (they can only attack in specific directions)
-        pawn_attacks = [hex_directions[1], hex_directions[5]] if opponent_color == "white" else [hex_directions[2], hex_directions[4]]
-        for direction in pawn_attacks:
+        # Check nearby squares for enemy king
+        for direction in hex_directions:
+            adjacent = king_pos + direction
+            if (self.is_valid_hex(adjacent) and 
+                (piece := self.get_piece(adjacent)) and 
+                piece.type == "K" and piece.color == opponent):
+                return True
+
+        # Check pawn attacks
+        for direction in self.PAWN_ATTACKS[opponent]:
             attack_pos = king_pos + direction
-            if self.is_valid_hex(attack_pos):
-                piece = self.get_piece(attack_pos)
-                if piece and piece.type == "P" and piece.color == opponent_color:
-                    return True
+            if (self.is_valid_hex(attack_pos) and 
+                (piece := self.get_piece(attack_pos)) and 
+                piece.type == "P" and piece.color == opponent):
+                return True
 
-        # Check knights
-        for hex, piece in self.board.items():
-            if piece.color == opponent_color and piece.type == "N":
-                if abs(king_pos - hex) == 2:  # Knights move in L-shape (2 steps)
-                    return True
+        # Check knight attacks using precomputed patterns
+        for d1, d2 in self.KNIGHT_PATTERNS:
+            attack_pos = king_pos + d1 + d2
+            if (self.is_valid_hex(attack_pos) and 
+                (piece := self.get_piece(attack_pos)) and 
+                piece.type == "N" and piece.color == opponent):
+                return True
 
-        # Check sliding pieces (rook, bishop, queen)
+        # Check sliding pieces (rooks and queens along primary directions)
         for direction in hex_directions:
             current = king_pos
             while True:
                 current = current + direction
                 if not self.is_valid_hex(current):
                     break
-                piece = self.get_piece(current)
-                if piece:
-                    if piece.color == opponent_color:
-                        # Check if piece can attack along this line
-                        if piece.type == "Q":  # Queen attacks in all directions
+                    
+                if piece := self.get_piece(current):
+                    if piece.color == opponent:
+                        if piece.type == "Q" or piece.type == "R":
                             return True
-                        if piece.type == "R" and direction in hex_directions:  # Rook attacks orthogonally
-                            return True
-                        if piece.type == "B" and direction in [hex_directions[i] for i in [1,3,5]]:  # Bishop attacks diagonally
+                    break  # Blocked by any piece
+
+        # Check sliding pieces (bishops and queens along diagonal directions)
+        for direction in self.BISHOP_DIRECTIONS:
+            current = king_pos
+            while True:
+                current = current + direction
+                if not self.is_valid_hex(current):
+                    break
+                    
+                if piece := self.get_piece(current):
+                    if piece.color == opponent:
+                        if piece.type == "Q" or piece.type == "B":
                             return True
                     break  # Blocked by any piece
                 
         return False
 
     def is_checkmate(self, color):
-        """Checks if the given color is checkmated."""
+        """Checks if the given color's king is checkmated.
+        
+        A checkmate occurs when:
+        1. The king is in check
+        2. No legal move by any piece can get the king out of check
+
+        Args:
+            color: The color ("white" or "black") to check for checkmate
+
+        Returns:
+            bool: True if checkmated, False if:
+            - The king is not in check
+            - There exists at least one legal move to escape check
+            - No king of that color exists on the board
+            - The color is invalid
+        """
         if not self.is_check(color):
             return False
 
@@ -199,16 +311,76 @@ class Board:
 
         return True
 
+    def evaluate_position(self) -> int:
+        """Evaluates the board position based on piece values, proximity to the center, mobility, and king exposure.
+        
+        Returns:
+            int: The evaluation score (positive for current player, negative for opponent)
+        """
+        score = 0
+        center = Hex(0, 0, 0)
+        for hex, piece in self.board.items():
+            value = PIECE_VALUES[piece.type]
+            distance_to_center = abs(hex - center)
+            center_bonus = (self.BOARD_RADIUS - distance_to_center) * CENTER_BONUS
+            mobility_bonus = len(self.get_possible_moves(hex)) * MOBILITY_BONUS
+            king_exposure_penalty = 0
+
+            if piece.type == "K":
+                friendly_pieces_nearby = 0
+                for direction in hex_directions:
+                    adjacent = hex + direction
+                    if self.is_valid_hex(adjacent):
+                        adjacent_piece = self.get_piece(adjacent)
+                        if adjacent_piece and adjacent_piece.color == piece.color:
+                            friendly_pieces_nearby += 1
+                king_exposure_penalty = (6 - friendly_pieces_nearby) * KING_EXPOSURE_PENALTY
+
+            if piece.color == self.current_player:
+                score += value + center_bonus + mobility_bonus - king_exposure_penalty
+            else:
+                score -= value + center_bonus + mobility_bonus - king_exposure_penalty
+
+        return score
+
+    def get_turn_info(self) -> str:
+        """Returns a string describing the current game state."""
+        return f"Move {self.move_number}, {self.current_player} to play"
+
+    def get_last_move(self) -> tuple:
+        """Returns the last move made (start_hex, end_hex) or None if no moves made."""
+        return self.moves_history[-1] if self.moves_history else None
+
     def __repr__(self):
-        """Returns an unambiguous string representation of the board (for debugging)."""
-        pieces = [f"{pos}:{piece.type}{piece.color[0]}" for pos, piece in self.board.items()]
-        return f"Board({len(pieces)} pieces, current_player='{self.current_player}')"
+        """Returns an unambiguous string representation of the board."""
+        return (f"Board({len(self.board)} pieces, "
+                f"move {self.move_number}, {self.current_player} to play)")
 
     def display(self, use_unicode=True, show_coords=False, use_colors=True, border_style="simple") -> str:
         """Returns a hexagonal string representation of the board.
         
-        The board is displayed with white pieces at the bottom (South)
-        and black pieces at the top (North).
+        The board uses cubic coordinates (q,r,s) where:
+        - q increases from left to right
+        - r increases from top to bottom
+        - s = -q - r (derived from q and r)
+        
+        The display shows:
+        - White pieces at the bottom (South)
+        - Black pieces at the top (North)
+        - Empty cells as dots (·) or spaces depending on unicode setting
+        
+        Args:
+            use_unicode: Whether to use Unicode chess symbols
+            show_coords: Whether to show r-coordinates on the right
+            use_colors: Whether to use ANSI colors in terminal output
+            border_style: Border style ("simple" or "double")
+        
+        Returns:
+            str: A multi-line string representation of the board
+            
+        Note:
+            The coordinate system displayed (when show_coords=True)
+            shows the r-coordinate, which increases from top to bottom.
         """
         borders = HEX_BORDERS[border_style]
         output = []
@@ -254,18 +426,3 @@ class Board:
     def __str__(self):
         """Returns a formatted string representation of the board."""
         return self.display()
-
-def print_board(board, use_unicode=True, show_coords=False):
-    """Returns a formatted string representation of the board."""
-    output = ""
-    for q in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
-        for r in range(max(-board.BOARD_RADIUS, -q-board.BOARD_RADIUS), 
-                     min(board.BOARD_RADIUS + 1, -q+board.BOARD_RADIUS + 1)):
-            hex = Hex(q, r, -q-r)
-            piece = board.get_piece(hex)
-            if piece:
-                output += str(piece) + " "
-            else:
-                output += ". "
-        output += "\n"
-    return output
