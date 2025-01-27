@@ -14,22 +14,47 @@ class Hex:
         r (int): The r coordinate.
     """
     def __init__(self, q, r, s):
-        """
-        Initializes a Hex object.
+        """Initialize a hex with cubic coordinates.
 
         Args:
-          q: The q coordinate.
-          r: The r coordinate.
-          s: The s coordinate.
-
-        Raises:
-          ValueError: If q + r + s is not equal to 0.
+            q: The q coordinate
+            r: The r coordinate
+            s: The s coordinate
         """
-        if q + r + s != 0:
-            raise ValueError("q + r + s must equal 0")
+        if not self.is_valid_cubic_coordinates(q, r, s):
+            raise ValueError(f"Invalid cubic coordinates: {q}+{r}+{s}≠0")
         self.q = q
         self.r = r
         self.s = s
+
+    @staticmethod
+    def is_valid_cubic_coordinates(q: int, r: int, s: int) -> bool:
+        """Check if coordinates satisfy the cubic coordinate constraint q + r + s = 0.
+        
+        Args:
+            q: The q coordinate
+            r: The r coordinate
+            s: The s coordinate
+            
+        Returns:
+            bool: True if coordinates are valid
+        """
+        return q + r + s == 0
+
+    @staticmethod
+    def is_within_radius(q: int, r: int, s: int, radius: int) -> bool:
+        """Check if coordinates are within given radius from origin.
+        
+        Args:
+            q: The q coordinate
+            r: The r coordinate
+            s: The s coordinate
+            radius: The maximum allowed distance from origin
+            
+        Returns:
+            bool: True if coordinates are within radius
+        """
+        return max(abs(q), abs(r), abs(s)) <= radius
 
     def __eq__(self, other):
         """

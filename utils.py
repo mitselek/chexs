@@ -16,6 +16,55 @@ COLORS = {
     "bg_dark": "\033[100m",   # Dark background
 }
 
+# Board display constants
+BORDER_STYLES = {
+    "simple": {
+        "horizontal": "─",
+        "vertical": "│",
+        "top_left": "┌",
+        "top_right": "┐",
+        "bottom_left": "└",
+        "bottom_right": "┘",
+    },
+    "double": {
+        "horizontal": "═",
+        "vertical": "║",
+        "top_left": "╔",
+        "top_right": "╗",
+        "bottom_left": "╚",
+        "bottom_right": "╝",
+    }
+}
+
+# Hex board display constants
+HEX_BORDERS = {
+    "simple": {
+        "nw_edge": "╱",  # North-west edge
+        "ne_edge": "╲",  # North-east edge
+        "vertical": "│",
+        "horizontal": "─",
+        "cross": "┼",
+    },
+    "double": {
+        "nw_edge": "╱",
+        "ne_edge": "╲",
+        "vertical": "║",
+        "horizontal": "═",
+        "cross": "╬",
+    }
+}
+
+# Display constants
+EMPTY_CELL = "·"  # Unicode empty cell
+ASCII_EMPTY_CELL = "  "  # ASCII empty cell (double space)
+ASCII_CELL_WIDTH = 2  # Width for ASCII display
+UNICODE_CELL_WIDTH = 1  # Width for Unicode display
+ROW_INDENT = 4 # Indentation for row numbers
+
+def get_cell_width(use_unicode: bool) -> int:
+    """Returns appropriate cell width based on display mode."""
+    return UNICODE_CELL_WIDTH if use_unicode else ASCII_CELL_WIDTH
+
 def supports_unicode() -> bool:
     """Check if the terminal supports Unicode characters."""
     return 'UTF-8' in os.environ.get('LANG', '').upper()

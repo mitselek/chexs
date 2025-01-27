@@ -3,13 +3,13 @@ from hex import Hex
 from piece import Piece
 from piece_moves import * # Import all piece movement functions
 from copy import deepcopy
-from utils import format_piece
+from utils import format_piece, HEX_BORDERS, EMPTY_CELL, ASCII_EMPTY_CELL, get_cell_width, ROW_INDENT
 
 class Board:
     """
     Represents the game board and manages game state.
     """
-    BOARD_RADIUS = 4  # Distance from center (0,0,0) to edge
+    BOARD_RADIUS = 5  # Distance from center (0,0,0) to edge
 
     def __init__(self):
         """
@@ -19,47 +19,82 @@ class Board:
         self.current_player = "white"
         self.setup_board()
 
-    def setup_board(self):
-        """
-        Sets up the initial board configuration (Gliński's setup).
-        """
-        self.board = {
-            Hex(-4, 2, 2): Piece("R", "white", Hex(-4, 2, 2)),
-            Hex(-4, 1, 3): Piece("N", "white", Hex(-4, 1, 3)),
-            Hex(-4, 0, 4): Piece("B", "white", Hex(-4, 0, 4)),
-            Hex(-3, 0, 3): Piece("Q", "white", Hex(-3, 0, 3)),
-            Hex(-2, 0, 2): Piece("K", "white", Hex(-2, 0, 2)),
-            Hex(-4, -1, 5): Piece("B", "white", Hex(-4, -1, 5)),
-            Hex(-4, -2, 6): Piece("N", "white", Hex(-4, -2, 6)),
-            Hex(-4, -3, 7): Piece("R", "white", Hex(-4, -3, 7)),
-            Hex(-3, -3, 6): Piece("B", "white", Hex(-3, -3, 6)),
-            Hex(-2, -2, 4): Piece("P", "white", Hex(-2, -2, 4)),
-            Hex(-1, -1, 2): Piece("P", "white", Hex(-1, -1, 2)),
-            Hex(0, 0, 0): Piece("P", "white", Hex(0, 0, 0)),
-            Hex(1, 1, -2): Piece("P", "white", Hex(1, 1, -2)),
-            Hex(2, 2, -4): Piece("P", "white", Hex(2, 2, -4)),
-             #Black pieces
-            Hex(4, -2, -2): Piece("R", "black", Hex(4, -2, -2)),
-            Hex(4, -1, -3): Piece("N", "black", Hex(4, -1, -3)),
-            Hex(4, 0, -4): Piece("B", "black", Hex(4, 0, -4)),
-            Hex(3, 0, -3): Piece("Q", "black", Hex(3, 0, -3)),
-            Hex(2, 0, -2): Piece("K", "black", Hex(2, 0, -2)),
-            Hex(4, 1, -5): Piece("B", "black", Hex(4, 1, -5)),
-            Hex(4, 2, -6): Piece("N", "black", Hex(4, 2, -6)),
-            Hex(4, 3, -7): Piece("R", "black", Hex(4, 3, -7)),
-            Hex(3, 3, -6): Piece("B", "black", Hex(3, 3, -6)),
-            Hex(2, 2, -4): Piece("P", "black", Hex(2, 2, -4)),
-            Hex(1, 1, -2): Piece("P", "black", Hex(1, 1, -2)),
-            Hex(0, 0, 0): Piece("P", "black", Hex(0, 0, 0)),
-            Hex(-1, -1, 2): Piece("P", "black", Hex(-1, -1, 2)),
-            Hex(-2, -2, 4): Piece("P", "black", Hex(-2, -2, 4)),
-        }
-
     def is_valid_hex(self, hex):
-        """Checks if a hex is within the board boundaries."""
-        return (abs(hex.q) <= self.BOARD_RADIUS and 
-                abs(hex.r) <= self.BOARD_RADIUS and 
-                abs(hex.s) <= self.BOARD_RADIUS)
+        """Checks if a hex is within the board boundaries and forms a valid hexagonal shape.
+        
+        For radius 5, valid coordinates must satisfy:
+        1. -5 ≤ q,r,s ≤ 5 (within radius)
+        2. q + r + s = 0 (cubic coordinates)
+        3. max(|q|, |r|, |s|) ≤ 5 (hexagonal shape)
+        """
+        # Check cubic coordinate constraint
+        if hex.q + hex.r + hex.s != 0:
+            return False
+            
+        # Check radius constraint
+        if (abs(hex.q) > self.BOARD_RADIUS or 
+            abs(hex.r) > self.BOARD_RADIUS or 
+            abs(hex.s) > self.BOARD_RADIUS):
+            return False
+            
+        # Check hexagonal shape using max norm
+        if max(abs(hex.q), abs(hex.r), abs(hex.s)) > self.BOARD_RADIUS:
+            return False
+            
+        return True
+
+    def setup_board(self):
+        """Sets up the initial board configuration for radius 5 board."""
+        self.board = {
+            # White center bishop row from South corner
+            Hex(0, -5, 5): Piece("B", "white", Hex(0, -5, 5)),    # Bishop
+            Hex(0, -4, 4): Piece("B", "white", Hex(0, -4, 4)),    # Bishop
+            Hex(0, -3, 3): Piece("B", "white", Hex(0, -3, 3)),    # Bishop
+
+            # White left back row
+            Hex(-1, -4, 5): Piece("Q", "white", Hex(-1, -4, 5)),  # Queen
+            Hex(-2, -3, 5): Piece("N", "white", Hex(-2, -3, 5)),  # Knight
+            Hex(-3, -2, 5): Piece("R", "white", Hex(-3, -2, 5)),  # Rook
+            
+            # White right back row
+            Hex(1, -5, 4): Piece("K", "white", Hex(1, -5, 4)),    # King
+            Hex(2, -5, 3): Piece("N", "white", Hex(2, -5, 3)),    # Knight
+            Hex(3, -5, 2): Piece("R", "white", Hex(3, -5, 2)),    # Rook
+
+            # White pawns from left to right
+            Hex(-4, -1, 5): Piece("P", "white", Hex(-4, -1, 5)),  # Pawn
+            Hex(-3, -1, 4): Piece("P", "white", Hex(-3, -1, 4)),  # Pawn
+            Hex(-2, -1, 3): Piece("P", "white", Hex(-2, -1, 3)),  # Pawn
+            Hex(-1, -1, 2): Piece("P", "white", Hex(-1, -1, 2)),  # Pawn
+            Hex(0, -1, 1): Piece("P", "white", Hex(0, -1, 1)),    # Pawn
+            Hex(1, -2, 1): Piece("P", "white", Hex(1, -2, 1)),    # Pawn
+            Hex(2, -3, 1): Piece("P", "white", Hex(2, -3, 1)),    # Pawn
+            Hex(3, -4, 1): Piece("P", "white", Hex(3, -4, 1)),    # Pawn
+            Hex(4, -5, 1): Piece("P", "white", Hex(4, -5, 1)),    # Pawn
+
+            # Black pieces mirrored across the center
+            Hex(0, 5, -5): Piece("B", "black", Hex(0, 5, -5)),    # Bishop
+            Hex(0, 4, -4): Piece("B", "black", Hex(0, 4, -4)),    # Bishop
+            Hex(0, 3, -3): Piece("B", "black", Hex(0, 3, -3)),    # Bishop
+
+            Hex(-1, 5, -4): Piece("Q", "black", Hex(-1, 5, -4)),  # Queen
+            Hex(-2, 5, -3): Piece("N", "black", Hex(-2, 5, -3)),  # Knight
+            Hex(-3, 5, -2): Piece("R", "black", Hex(-3, 5, -2)),  # Rook
+
+            Hex(1, 4, -5): Piece("K", "black", Hex(1, 4, -5)),    # King
+            Hex(2, 3, -5): Piece("N", "black", Hex(2, 3, -5)),    # Knight
+            Hex(3, 2, -5): Piece("R", "black", Hex(3, 2, -5)),    # Rook
+
+            Hex(-4, 5, -1): Piece("P", "black", Hex(-4, 5, -1)),  # Pawn
+            Hex(-3, 4, -1): Piece("P", "black", Hex(-3, 4, -1)),  # Pawn
+            Hex(-2, 3, -1): Piece("P", "black", Hex(-2, 3, -1)),  # Pawn
+            Hex(-1, 2, -1): Piece("P", "black", Hex(-1, 2, -1)),  # Pawn
+            Hex(0, 1, -1): Piece("P", "black", Hex(0, 1, -1)),    # Pawn
+            Hex(1, 1, -2): Piece("P", "black", Hex(1, 1, -2)),    # Pawn
+            Hex(2, 1, -3): Piece("P", "black", Hex(2, 1, -3)),    # Pawn
+            Hex(3, 1, -4): Piece("P", "black", Hex(3, 1, -4)),    # Pawn
+            Hex(4, 1, -5): Piece("P", "black", Hex(4, 1, -5)),    # Pawn
+        }
 
     def is_occupied(self, hex):
         """Checks if a hex is occupied by a piece."""
@@ -169,31 +204,52 @@ class Board:
         pieces = [f"{pos}:{piece.type}{piece.color[0]}" for pos, piece in self.board.items()]
         return f"Board({len(pieces)} pieces, current_player='{self.current_player}')"
 
-    def display(self, use_unicode=True, show_coords=False, use_colors=True):
-        """Returns a formatted string representation of the board.
-
-        Args:
-            use_unicode (bool): Whether to use Unicode chess symbols
-            show_coords (bool): Whether to show coordinates
-            use_colors (bool): Whether to use ANSI colors in terminal output
+    def display(self, use_unicode=True, show_coords=False, use_colors=True, border_style="simple") -> str:
+        """Returns a hexagonal string representation of the board.
+        
+        The board is displayed with white pieces at the bottom (South)
+        and black pieces at the top (North).
         """
-        output = "     " + "----" * (self.BOARD_RADIUS + 1) + "\n"
-        for r in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
-            output += "  " * (self.BOARD_RADIUS - r) + "| "
+        borders = HEX_BORDERS[border_style]
+        output = []
+        empty = EMPTY_CELL if use_unicode else ASCII_EMPTY_CELL
+        cell_width = get_cell_width(use_unicode)
+
+        # Create board content - iterate from top (black) to bottom (white)
+        for r in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):  # Changed iteration order
+            # Calculate row indentation (reversed to match new order)
+            indent = " " * (ROW_INDENT + (self.BOARD_RADIUS + r) * 2)  # Changed sign in calculation
+            row = []
+
             for q in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
                 s = -q - r
                 if abs(q) <= self.BOARD_RADIUS and abs(r) <= self.BOARD_RADIUS and abs(s) <= self.BOARD_RADIUS:
                     hex = Hex(q, r, s)
                     piece = self.get_piece(hex)
                     if piece:
-                        output += format_piece(str(piece), use_unicode, use_colors) + " "
+                        cell = format_piece(str(piece), use_unicode, use_colors)
+                        row.append(f"{cell:^{cell_width}}")
                     else:
-                        output += "· "
+                        row.append(f"{empty:^{cell_width}}")
                 else:
-                    output += "  "
-            output += "|\n"
-        output += "     " + "----" * (self.BOARD_RADIUS + 1) + "\n"
-        return output
+                    row.append(" " * cell_width)
+
+            # Add hex borders
+            hex_row = []
+            for i, cell in enumerate(row):
+                if i > 0:
+                    hex_row.append(borders["vertical"])
+                hex_row.append(cell)
+
+            # Add coordinates if requested
+            coord_suffix = f" r={r:2d}" if show_coords else ""
+            
+            # Join the row parts and check if it contains any non-space characters
+            row_str = "".join(hex_row)
+            if row_str.strip():  # Only add non-empty rows
+                output.append(f"{indent}{borders['nw_edge']}{row_str}{borders['ne_edge']}{coord_suffix}")
+
+        return "\n".join(output)
 
     def __str__(self):
         """Returns a formatted string representation of the board."""
