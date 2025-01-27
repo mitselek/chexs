@@ -397,38 +397,48 @@ class Board:
         cell_width = get_cell_width(use_unicode)
 
         # Create board content - iterate from top (black) to bottom (white)
-        for r in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):  # Changed iteration order
-            # Calculate row indentation (reversed to match new order)
-            indent = " " * (ROW_INDENT + (self.BOARD_RADIUS + r) * 1)  # Changed sign in calculation
+        for r in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
+            # Calculate row indentation
+            indent = " " * abs(r) + " " * ROW_INDENT
             row = []
 
             for q in range(-self.BOARD_RADIUS, self.BOARD_RADIUS + 1):
                 s = -q - r
-                if abs(q) <= self.BOARD_RADIUS and abs(r) <= self.BOARD_RADIUS and abs(s) <= self.BOARD_RADIUS:
-                    hex = Hex(q, r, s)
-                    piece = self.get_piece(hex)
-                    if piece:
-                        cell = format_piece(str(piece), use_unicode, use_colors)
-                        row.append(f"{cell:^{cell_width}}")
-                    else:
-                        row.append(f"{empty:^{cell_width}}")
+                if not self.is_valid_hex(Hex(q, r, s)):
+                    continue
+                hex = Hex(q, r, s)
+                piece = self.get_piece(hex)
+                if piece:
+                    cell = format_piece(str(piece), use_unicode, use_colors)
+                    row.append(f"{cell:^{cell_width}}")
                 else:
-                    row.append(" " * cell_width)
+                    row.append(f"{empty:^{cell_width}}")
 
             # Add hex borders
             hex_row = []
             for i, cell in enumerate(row):
-                if i > 0:
+                if i > 0 and row[i-1].strip():  # Only add vertical borders between valid cells
                     hex_row.append(borders["vertical"])
                 hex_row.append(cell)
 
             # Add coordinates if requested
             coord_suffix = f" r={r:2d}" if show_coords else ""
             
+            # Determine the appropriate edge characters
+            if r < 0:
+                edge_left = borders['nw_edge']
+                edge_right = borders['ne_edge']
+            elif r == 0:
+                edge_left = borders['vertical']
+                edge_right = borders['vertical']
+            else:
+                edge_left = borders['ne_edge']
+                edge_right = borders['nw_edge']
+
             # Join the row parts and check if it contains any non-space characters
             row_str = "".join(hex_row)
             if row_str.strip():  # Only add non-empty rows
-                output.append(f"{indent}{borders['nw_edge']}{row_str}{borders['ne_edge']}{coord_suffix}")
+                output.append(f"{indent}{edge_left}{row_str}{edge_right}{coord_suffix}")
 
         return "\n".join(output)
 
