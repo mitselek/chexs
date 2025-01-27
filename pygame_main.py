@@ -5,39 +5,46 @@ from utils import format_piece
 
 # Constants
 WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
-HEX_SIZE = 40
-HEX_HEIGHT = HEX_SIZE * 2
-HEX_WIDTH = (3 ** 0.5) * HEX_SIZE
-BOARD_OFFSET_X = WINDOW_WIDTH // 2 - HEX_WIDTH * 2.5  # Adjusted to center the board
-BOARD_OFFSET_Y = WINDOW_HEIGHT // 2 - HEX_HEIGHT * 2.5  # Adjusted to center the board
+WINDOW_HEIGHT = 700
+HEX_SIDE = 40  # Size of side of hexagon
+HEX_DIAGONAL = HEX_SIDE * 2
+HEX_HEIGHT = (3 ** 0.5) * HEX_SIDE  # Twice the apothem of the hexagon
+BOARD_OFFSET_X = WINDOW_WIDTH // 2  # Center the board horizontally
+BOARD_OFFSET_Y = WINDOW_HEIGHT // 2  # Center the board vertically
 
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-LIGHT_GRAY = (200, 200, 200)
-DARK_GRAY = (100, 100, 100)
-COLORS = [LIGHT_GRAY, DARK_GRAY, (150, 150, 150)]  # Add a third color for variety
+TILE_1_COLOR = (200, 200, 200)
+TILE_2_COLOR = (100, 100, 100)
+TILE_3_COLOR = (150, 150, 150)
+COLORS = [TILE_1_COLOR, TILE_2_COLOR, TILE_3_COLOR]
 
 def hex_to_pixel(hex):
     """Convert hex coordinates to pixel coordinates."""
-    x = HEX_WIDTH * (hex.q + hex.r / 2)
-    y = HEX_HEIGHT * (3 / 4) * hex.r
+    x = HEX_SIDE * (hex.q * 3/2)
+    y = HEX_HEIGHT * (hex.r - hex.s) / 2
     return (x + BOARD_OFFSET_X, y + BOARD_OFFSET_Y)
 
 def draw_hex(surface, color, hex):
     """Draw a hexagon at the given hex coordinates."""
     x, y = hex_to_pixel(hex)
     points = [
-        (x + HEX_SIZE * (3 ** 0.5) / 2, y + HEX_SIZE / 2),
-        (x, y + HEX_SIZE),
-        (x - HEX_SIZE * (3 ** 0.5) / 2, y + HEX_SIZE / 2),
-        (x - HEX_SIZE * (3 ** 0.5) / 2, y - HEX_SIZE / 2),
-        (x, y - HEX_SIZE),
-        (x + HEX_SIZE * (3 ** 0.5) / 2, y - HEX_SIZE / 2),
+        (x + HEX_SIDE / 1, y),
+        (x + HEX_SIDE / 2, y + HEX_HEIGHT/2),
+        (x - HEX_SIDE / 2, y + HEX_HEIGHT/2),
+        (x - HEX_SIDE / 1, y),
+        (x - HEX_SIDE / 2, y - HEX_HEIGHT/2),
+        (x + HEX_SIDE / 2, y - HEX_HEIGHT/2),
     ]
     pygame.draw.polygon(surface, color, points, 0)
     pygame.draw.polygon(surface, BLACK, points, 1)  # Thin black line around hexagon
+
+    # Draw coordinates on the hex
+    font = pygame.font.SysFont(None, 18)
+    coord_text = font.render(f"q{hex.q}|r{hex.r}|s{hex.s}", True, BLACK)
+    coord_rect = coord_text.get_rect(center=(x, y))
+    surface.blit(coord_text, coord_rect)
 
 def draw_board(surface, board):
     """Draw the entire board."""
@@ -50,7 +57,7 @@ def draw_board(surface, board):
                 color = COLORS[color_index]
                 draw_hex(surface, color, hex)
                 piece = board.get_piece(hex)
-                if piece:
+                if piece and False:
                     piece_str = str(piece)
                     piece_text = format_piece(piece_str, use_unicode=True, use_colors=False)
                     font = pygame.font.SysFont(None, 24)
@@ -61,7 +68,7 @@ def draw_board(surface, board):
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-    pygame.display.set_caption("Hexagonal Chess")
+    pygame.display.set_caption("Gliński's Hexagonal Chess")
     clock = pygame.time.Clock()
     board = Board()
 
