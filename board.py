@@ -150,6 +150,7 @@ class Board:
 
     def move_piece(self, start_hex, end_hex):
         """Moves a piece from one hex to another and updates game state."""
+        print(f"Attempting to move piece from {start_hex} to {end_hex}")  # Debug line
         piece = self.get_piece(start_hex)
         if piece.color != self.current_player:
             raise ValueError(f"It's {self.current_player}'s turn to move")
@@ -193,6 +194,7 @@ class Board:
         Note:
             This method does not account for moves that would leave the king in check.
         """
+        print(f"Getting possible moves for piece at {hex}")  # Debug line
         piece = self.get_piece(hex)
         if piece is None or piece.color != self.current_player:
             return set()

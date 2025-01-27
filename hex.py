@@ -4,6 +4,7 @@ Provides classes and functions for representing and manipulating hexagonal coord
 """
 
 import math
+import traceback
 
 class Hex:
     """
@@ -115,6 +116,8 @@ class Hex:
         """
         if isinstance(other, tuple):
             if len(other) != 3:
+                print(other)
+                traceback.print_stack()
                 raise ValueError("Direction tuple must have exactly 3 coordinates")
             try:
                 return Hex(self.q + int(other[0]), 

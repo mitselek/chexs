@@ -123,6 +123,7 @@ def main():
                     elif clicked_hex != selected_hex:
                         try:
                             possible_moves = board.get_possible_moves(selected_hex)
+                            print(f"Possible moves for {selected_hex}: {possible_moves}")
                             if clicked_hex in possible_moves:
                                 temp_board = deepcopy(board)
                                 temp_board.move_piece(selected_hex, clicked_hex)
