@@ -418,7 +418,7 @@ class Board:
             hex_row = []
             for i, cell in enumerate(row):
                 if i > 0 and row[i-1].strip():  # Only add vertical borders between valid cells
-                    hex_row.append(borders["vertical"])
+                    hex_row.append("X")
                 hex_row.append(cell)
 
             # Add coordinates if requested
@@ -429,8 +429,8 @@ class Board:
                 edge_left = borders['nw_edge']
                 edge_right = borders['ne_edge']
             elif r == 0:
-                edge_left = borders['vertical']
-                edge_right = borders['vertical']
+                edge_left = '<'
+                edge_right = '>'
             else:
                 edge_left = borders['ne_edge']
                 edge_right = borders['nw_edge']
