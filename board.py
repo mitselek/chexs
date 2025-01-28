@@ -26,8 +26,8 @@ class Board:
 
     # Attack direction constants
     PAWN_ATTACKS = {
-        "white": [hex_directions[1], hex_directions[5]],  # N, NW
-        "black": [hex_directions[3], hex_directions[4]],  # S, SW
+        "white": [hex_directions[0], hex_directions[5]],  # NE, NW
+        "black": [hex_directions[3], hex_directions[4]],  # SW, SE
     }
     
     ROOK_DIRECTIONS = set(hex_directions)  # All 6 primary directions
@@ -210,6 +210,46 @@ class Board:
         if piece.type in move_functions:
             return move_functions[piece.type](self, piece)
         return set()
+
+    def get_pawn_moves(self, piece):
+        """Calculate all valid moves for a pawn.
+        
+        Pawns move forward one step (or two on first move) and capture
+        diagonally forward.
+        
+        Args:
+            board: The game board
+            piece: The pawn piece to move
+            
+        Returns:
+            set: Valid destination hexes for the pawn
+        """
+        print(f"Calculating pawn moves for piece at {piece.position}")  # Debug line
+        moves = set()
+        forward = hex_directions[0] if piece.color == "white" else hex_directions[3]
+        one_step = piece.position + forward  # Using __add__
+        print(f"Checking one step move {one_step} from {piece.position} using direction {forward}")  # Debug line
+
+        if self.is_valid_hex(one_step) and not self.is_occupied(one_step):
+            moves.add(one_step)
+
+            # Double first move
+            if not piece.has_moved:
+                two_step = one_step + forward  # Using __add__
+                print(f"Checking two step move {two_step} from {one_step} using direction {forward}")  # Debug line
+                if self.is_valid_hex(two_step) and not self.is_occupied(two_step):
+                    moves.add(two_step)
+
+        # Captures
+        capture_left = piece.position + (hex_directions[5] if piece.color == "white" else hex_directions[2])  # Using __add__
+        capture_right = piece.position + (hex_directions[1] if piece.color == "white" else hex_directions[4])  # Using __add__
+        print(f"Checking capture moves {capture_left} and {capture_right} from {piece.position}")  # Debug line
+
+        for capture_move in [capture_left, capture_right]:
+            if self.is_valid_hex(capture_move) and self.is_occupied(capture_move) and self.get_piece(capture_move).color != piece.color:
+                moves.add(capture_move)
+
+        return moves
 
     def is_check(self, color: str) -> bool:
         """Checks if the given color's king is in check.

@@ -130,7 +130,7 @@ def get_pawn_moves(board, piece):
     """
     print(f"Calculating pawn moves for piece at {piece.position}")  # Debug line
     moves = set()
-    forward = hex_directions[0] if piece.color == "white" else hex_directions[3]
+    forward = hex_directions[1] if piece.color == "white" else hex_directions[4]
     one_step = piece.position + forward  # Using __add__
     print(f"Checking one step move {one_step} from {piece.position} using direction {forward}")  # Debug line
 
@@ -145,8 +145,8 @@ def get_pawn_moves(board, piece):
                 moves.add(two_step)
 
     # Captures
-    capture_left = piece.position + (hex_directions[5] if piece.color == "white" else hex_directions[2])  # Using __add__
-    capture_right = piece.position + (hex_directions[1] if piece.color == "white" else hex_directions[4])  # Using __add__
+    capture_left = piece.position + (hex_directions[0] if piece.color == "white" else hex_directions[3])  # Using __add__
+    capture_right = piece.position + (hex_directions[2] if piece.color == "white" else hex_directions[5])  # Using __add__
     print(f"Checking capture moves {capture_left} and {capture_right} from {piece.position}")  # Debug line
 
     for capture_move in [capture_left, capture_right]:
