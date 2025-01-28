@@ -182,18 +182,22 @@ def main():
     selected_hex = None
     possible_moves = None
     running = True
+    redraw = True  # Flag to indicate if the screen needs to be redrawn
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 selected_hex, possible_moves = handle_mouse_button_down(board, pygame.mouse.get_pos(), selected_hex, possible_moves)
+                redraw = True  # Set redraw flag when there is a mouse event
 
-        screen.fill(WHITE)
-        draw_board(screen, board, piece_images, selected_hex, possible_moves)
-        draw_score(screen, board)
+        if redraw:
+            screen.fill(WHITE)
+            draw_board(screen, board, piece_images, selected_hex, possible_moves)
+            draw_score(screen, board)
+            pygame.display.flip()
+            redraw = False  # Reset redraw flag after drawing
 
-        pygame.display.flip()
         clock.tick(30)
 
     pygame.quit()

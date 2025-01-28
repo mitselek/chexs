@@ -75,6 +75,7 @@ class Board:
         self.move_number = 1  # Start at move 1
         self.moves_history = []  # List of (start_hex, end_hex) tuples
         self.setup_board()  # Call setup_board last
+        self._move_cache = {}  # Cache for possible moves
 
     def is_valid_hex(self, hex):
         """Checks if a hex is within the board boundaries and forms a valid hexagonal shape.
@@ -196,6 +197,9 @@ class Board:
                (piece.color == "black" and end_hex.r == -self.BOARD_RADIUS):
                 self.promote_pawn(end_hex, "Q")
 
+        # Clear the move cache after a move
+        self._move_cache.clear()
+
     def get_possible_moves(self, hex):
         """Returns a set of legal moves for the piece at the given hex.
         
@@ -212,6 +216,9 @@ class Board:
         Note:
             This method does not account for moves that would leave the king in check.
         """
+        if hex in self._move_cache:
+            return self._move_cache[hex]
+
         print(f"Getting possible moves for piece at {hex}")  # Debug line
         piece = self.get_piece(hex)
         if piece is None or piece.color != self.current_player:
@@ -234,6 +241,8 @@ class Board:
             temp_board.move_piece(hex, move)
             if not temp_board.is_check(self.current_player):
                 legal_moves.add(move)
+
+        self._move_cache[hex] = legal_moves
         return legal_moves
 
     def get_pawn_moves(self, piece):
