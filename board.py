@@ -208,7 +208,14 @@ class Board:
             "P": get_pawn_moves,
         }
         if piece.type in move_functions:
-            return move_functions[piece.type](self, piece)
+            all_moves = move_functions[piece.type](self, piece)
+            legal_moves = set()
+            for move in all_moves:
+                temp_board = deepcopy(self)
+                temp_board.move_piece(hex, move)
+                if not temp_board.is_check(self.current_player):
+                    legal_moves.add(move)
+            return legal_moves
         return set()
 
     def get_pawn_moves(self, piece):
