@@ -126,6 +126,14 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
             ]
             pygame.draw.polygon(surface, HIGHLIGHT_COLOR, points, 3)  # Highlight with yellow border
 
+def draw_score(surface, board):
+    """Draw the position score on the screen."""
+    font = pygame.font.SysFont(None, 36)
+    score = board.evaluate_position()
+    score_text = font.render(f"Score: {score}", True, BLACK)
+    score_rect = score_text.get_rect(center=(WINDOW_WIDTH // 2, 30))
+    surface.blit(score_text, score_rect)
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -188,6 +196,7 @@ def main():
 
         screen.fill(WHITE)
         draw_board(screen, board, piece_images, selected_hex, possible_moves)
+        draw_score(screen, board)
 
         pygame.display.flip()
         clock.tick(30)
