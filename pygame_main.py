@@ -134,6 +134,41 @@ def draw_score(surface, board):
     score_rect = score_text.get_rect(center=(WINDOW_WIDTH // 2, 30))
     surface.blit(score_text, score_rect)
 
+def handle_mouse_button_down(board, mouse_pos, selected_hex, possible_moves):
+    """Handle mouse button down events."""
+    clicked_hex = pixel_to_hex(*mouse_pos)  # Unpack mouse_pos tuple
+    if not board.is_valid_hex(clicked_hex):
+        return None, None
+
+    if selected_hex is None:
+        if board.is_occupied(clicked_hex) and board.get_piece(clicked_hex).color == board.current_player:
+            return clicked_hex, board.get_possible_moves(clicked_hex)
+    elif clicked_hex != selected_hex:
+        try:
+            if clicked_hex in possible_moves:
+                temp_board = deepcopy(board)
+                temp_board.move_piece(selected_hex, clicked_hex)
+                if not temp_board.is_check(board.current_player):
+                    board.move_piece(selected_hex, clicked_hex)
+                    if board.is_checkmate(board.current_player):
+                        winner = "black" if board.current_player == "white" else "white"
+                        print(board.display())  # Display the final board
+                        print(f"Checkmate! {winner} wins!")
+                        return None, None
+                    if board.is_check(board.current_player):
+                        print("Check!")
+                    return None, None
+                else:
+                    print("You cannot put yourself in check")
+                    return None, None
+            else:
+                print("Invalid move")
+                return None, None
+        except ValueError as e:
+            print(f"Invalid move: {e}")
+            return None, None
+    return None, None
+
 def main():
     pygame.init()
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
@@ -152,47 +187,7 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_pos = pygame.mouse.get_pos()
-                clicked_hex = pixel_to_hex(*mouse_pos)  # Unpack mouse_pos tuple
-                if board.is_valid_hex(clicked_hex):
-                    if selected_hex is None:
-                        if board.is_occupied(clicked_hex) and board.get_piece(clicked_hex).color == board.current_player:
-                            selected_hex = clicked_hex
-                            possible_moves = board.get_possible_moves(selected_hex)
-                    elif clicked_hex != selected_hex:
-                        try:
-                            if clicked_hex in possible_moves:
-                                temp_board = deepcopy(board)
-                                temp_board.move_piece(selected_hex, clicked_hex)
-                                if not temp_board.is_check(board.current_player):
-                                    board.move_piece(selected_hex, clicked_hex)
-                                    if board.is_checkmate(board.current_player):
-                                        winner = "black" if board.current_player == "white" else "white"
-                                        print(board.display())  # Display the final board
-                                        print(f"Checkmate! {winner} wins!")
-                                        running = False
-                                    if board.is_check(board.current_player):
-                                        print("Check!")
-                                    selected_hex = None
-                                    possible_moves = None
-                                else:
-                                    print("You cannot put yourself in check")
-                                    selected_hex = None
-                                    possible_moves = None
-                            else:
-                                print("Invalid move")
-                                selected_hex = None
-                                possible_moves = None
-                        except ValueError as e:
-                            print(f"Invalid move: {e}")
-                            selected_hex = None
-                            possible_moves = None
-                    else:
-                        selected_hex = None
-                        possible_moves = None
-                else:
-                    selected_hex = None
-                    possible_moves = None
+                selected_hex, possible_moves = handle_mouse_button_down(board, pygame.mouse.get_pos(), selected_hex, possible_moves)
 
         screen.fill(WHITE)
         draw_board(screen, board, piece_images, selected_hex, possible_moves)

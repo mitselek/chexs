@@ -27,7 +27,7 @@ class Piece:
         Returns:
             A new Piece instance at the new position with has_moved=True
         """
-        print(f"Moving {self.color} {self.type} from {self.position} to {new_position}")
+        # print(f"Moving {self.color} {self.type} from {self.position} to {new_position}")
         return replace(self, position=new_position, has_moved=True)
 
     def __str__(self) -> str:

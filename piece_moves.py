@@ -10,7 +10,7 @@ def get_bishop_moves(board, piece):
         current = piece.position
         while True:
             current = current + direction
-            print(f"Checking position {current} in direction {direction}")  # Debug line
+            # print(f"Checking position {current} in direction {direction}")  # Debug line
             if not board.is_valid_hex(current):
                 break
             target = board.get_piece(current)
@@ -66,7 +66,7 @@ def get_rook_moves(board, piece):
         current = piece.position
         while True:
             current = current + direction  # Using __add__ instead of hex_add
-            print(f"Checking position {current} in direction {direction}")  # Debug line
+            # print(f"Checking position {current} in direction {direction}")  # Debug line
             if not board.is_valid_hex(current):
                 break
             target = board.get_piece(current)
