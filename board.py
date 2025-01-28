@@ -199,23 +199,10 @@ class Board:
 
         # Clear the move cache after a move
         self._move_cache.clear()
+        self._last_move = (start_hex, end_hex)
 
     def get_possible_moves(self, hex):
-        """Returns a set of legal moves for the piece at the given hex.
-        
-        Args:
-            hex: The hex position to check for possible moves
-
-        Returns:
-            set[Hex]: A set of legal destination hexes for the piece.
-            Returns an empty set if:
-            - The hex is empty
-            - The piece belongs to the non-current player
-            - The piece has no legal moves
-
-        Note:
-            This method does not account for moves that would leave the king in check.
-        """
+        """Returns a set of legal moves for the piece at the given hex."""
         if hex in self._move_cache:
             return self._move_cache[hex]
 
@@ -244,6 +231,11 @@ class Board:
 
         self._move_cache[hex] = legal_moves
         return legal_moves
+
+    def has_position_changed(self, hex):
+        """Check if the position of the piece at the given hex has changed."""
+        last_move = self._last_move if hasattr(self, '_last_move') else None
+        return last_move and (hex == last_move[0] or hex == last_move[1])
 
     def get_pawn_moves(self, piece):
         """Calculate all valid moves for a pawn.

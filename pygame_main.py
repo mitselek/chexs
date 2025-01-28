@@ -188,8 +188,10 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                selected_hex, possible_moves = handle_mouse_button_down(board, pygame.mouse.get_pos(), selected_hex, possible_moves)
-                redraw = True  # Set redraw flag when there is a mouse event
+                new_selected_hex, new_possible_moves = handle_mouse_button_down(board, pygame.mouse.get_pos(), selected_hex, possible_moves)
+                if new_selected_hex != selected_hex or new_possible_moves != possible_moves:
+                    selected_hex, possible_moves = new_selected_hex, new_possible_moves
+                    redraw = True  # Set redraw flag when there is a mouse event
 
         if redraw:
             screen.fill(WHITE)
