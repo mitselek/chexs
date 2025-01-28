@@ -7,7 +7,7 @@ from utils import format_piece, load_piece_images
 
 # Constants
 BOARD_SIZE = 5  # Board size
-HEX_SIDE = 40  # Size of side of hexagon
+HEX_SIDE = 60  # Size of side of hexagon
 HEX_DIAGONAL = HEX_SIDE * 2
 HEX_APOTHEM = HEX_SIDE * (3 ** 0.5) / 2
 HEX_HEIGHT = (3 ** 0.5) * HEX_SIDE  # Twice the apothem of the hexagon
@@ -77,8 +77,8 @@ def draw_hex(surface, color, hex):
     pygame.draw.polygon(surface, BLACK, points, 1)  # Thin black line around hexagon
 
     # Draw coordinates on the hex
-    font = pygame.font.SysFont(None, 18)
-    coord_text = font.render(f"q{hex.q}|r{hex.r}|s{hex.s}", True, WHITE)
+    font = pygame.font.SysFont(None, 22)
+    coord_text = font.render(f"q{hex.q} r{hex.r} s{hex.s}", True, WHITE)
     coord_rect = coord_text.get_rect(center=(x, y))
     surface.blit(coord_text, coord_rect)
 

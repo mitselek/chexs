@@ -25,7 +25,7 @@ def get_knight_moves(board, piece):
     """Calculate all valid moves for a knight.
     
     A knight moves in an L-shape pattern: 2 steps in one direction, then 1 step 
-    at a 120-degree angle.
+    at a 60-degree angle.
     
     Args:
         board: The game board
@@ -37,9 +37,9 @@ def get_knight_moves(board, piece):
     print(f"Calculating knight moves for piece at {piece.position}")  # Debug line
     moves = set()
     for d1_index, d1 in enumerate(hex_directions):
-        for d2_index in [(d1_index + 2) % 6, (d1_index + 4) % 6]:
+        for d2_index in [(d1_index + 1) % 6, (d1_index - 1) % 6]:
             d2 = hex_directions[d2_index]
-            move = piece.position + d1 + d2  # More readable!
+            move = piece.position + d1 + d1 + d2  # Two steps in d1 direction, one step in d2 direction
             print(f"Checking move {move} from {piece.position} using directions {d1} and {d2}")  # Debug line
             if board.is_valid_hex(move):
                 target_piece = board.get_piece(move)

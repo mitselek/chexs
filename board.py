@@ -14,6 +14,15 @@ PIECE_VALUES = {
     "K": 1000, # King (very high value)
 }
 
+UNIT_VECTORS = {
+    "N": (0, -1, 1),  # North
+    "NE": (1, -1, 0),  # North-East
+    "SE": (1, 0, -1),  # South-East
+    "S": (0, 1, -1),  # South
+    "SW": (-1, 1, 0),  # South-West
+    "NW": (-1, 0, 1),  # North-West
+}
+
 CENTER_BONUS = 0.1  # Bonus points per step closer to the center
 MOBILITY_BONUS = 0.05  # Bonus points per legal move
 KING_EXPOSURE_PENALTY = 0.5  # Penalty points per missing friendly piece around the king
@@ -42,11 +51,20 @@ class Board:
     BISHOP_DIRECTIONS = set(hex_bishop_directions)  # Diagonal directions between primary directions
     QUEEN_DIRECTIONS = ROOK_DIRECTIONS | BISHOP_DIRECTIONS  # Queens can move in all directions
     
-    # Knight move patterns (precomputed)
+    # Knight move patterns (hard-coded)
     KNIGHT_PATTERNS = [
-        (d1, d2) for d1_index, d1 in enumerate(hex_directions)
-        for d2_index in [(d1_index + 2) % 6, (d1_index + 4) % 6]
-        for d2 in [hex_directions[d2_index]]
+        ((1, 0, -1), (0, 1, -1)),  # NE, N
+        ((1, 0, -1), (1, -1, 0)),  # NE, SE
+        ((0, 1, -1), (-1, 1, 0)),  # N, NW
+        ((0, 1, -1), (1, 0, -1)),  # N, NE
+        ((-1, 1, 0), (-1, 0, 1)),  # NW, SW
+        ((-1, 1, 0), (0, 1, -1)),  # NW, N
+        ((-1, 0, 1), (0, -1, 1)),  # SW, S
+        ((-1, 0, 1), (-1, 1, 0)),  # SW, NW
+        ((0, -1, 1), (1, -1, 0)),  # S, SE
+        ((0, -1, 1), (-1, 0, 1)),  # S, SW
+        ((1, -1, 0), (1, 0, -1)),  # SE, NE
+        ((1, -1, 0), (0, -1, 1)),  # SE, S
     ]
 
     def __init__(self):
@@ -207,16 +225,16 @@ class Board:
             "K": get_king_moves,
             "P": get_pawn_moves,
         }
-        if piece.type in move_functions:
-            all_moves = move_functions[piece.type](self, piece)
-            legal_moves = set()
-            for move in all_moves:
-                temp_board = deepcopy(self)
-                temp_board.move_piece(hex, move)
-                if not temp_board.is_check(self.current_player):
-                    legal_moves.add(move)
-            return legal_moves
-        return set()
+        if piece.type not in move_functions:
+            return set()
+        all_moves = move_functions[piece.type](self, piece)
+        legal_moves = set()
+        for move in all_moves:
+            temp_board = deepcopy(self)
+            temp_board.move_piece(hex, move)
+            if not temp_board.is_check(self.current_player):
+                legal_moves.add(move)
+        return legal_moves
 
     def get_pawn_moves(self, piece):
         """Calculate all valid moves for a pawn.
