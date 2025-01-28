@@ -1,5 +1,6 @@
 from typing import Dict, Optional
 import os
+import pygame
 
 # Unicode chess piece symbols
 UNICODE_PIECES: Dict[str, str] = {
@@ -131,3 +132,17 @@ def create_border(width: int, style: str = "simple") -> str:
         raise ValueError(f'Invalid border style: "{style}". Must be one of: "{valid_styles}"')
     
     return styles[style] * width
+
+def load_piece_images(image_folder):
+    """Load images for chess pieces from the specified folder."""
+    piece_images = {}
+    piece_types = ["P", "R", "N", "B", "Q", "K"]
+    colors = ["w", "b"]
+    for color in colors:
+        for piece in piece_types:
+            piece_str = f"{color}{piece}"
+            image_path = os.path.join(image_folder, f"{piece_str}.png")
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"No file '{image_path}' found in working directory '{os.getcwd()}'.")
+            piece_images[piece_str] = pygame.image.load(image_path)
+    return piece_images

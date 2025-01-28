@@ -3,7 +3,7 @@ from math import sqrt
 from copy import deepcopy
 from hex import Hex
 from board import Board
-from utils import format_piece
+from utils import format_piece, load_piece_images
 
 # Constants
 BOARD_SIZE = 5  # Board size
@@ -25,6 +25,7 @@ BLACK = (0, 0, 0)
 LIGHT_WOOD = (222, 184, 135)  # Light wood color
 MEDIUM_WOOD = (160, 82, 45)   # Medium wood color
 DARK_WOOD = (101, 67, 33)     # Dark wood color
+HIGHLIGHT_COLOR = (255, 255, 0)  # Yellow for highlighting moves
 COLORS = [LIGHT_WOOD, MEDIUM_WOOD, DARK_WOOD]
 
 def hex_to_pixel(hex):
@@ -81,7 +82,7 @@ def draw_hex(surface, color, hex):
     coord_rect = coord_text.get_rect(center=(x, y))
     surface.blit(coord_text, coord_rect)
 
-def draw_board(surface, board):
+def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=None):
     """Draw the entire board."""
     for r in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
         for q in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
@@ -94,11 +95,36 @@ def draw_board(surface, board):
                 piece = board.get_piece(hex)
                 if piece:
                     piece_str = str(piece)
-                    piece_text = format_piece(piece_str, use_unicode=True, use_colors=False)
-                    font = pygame.font.SysFont(None, 24)
-                    text = font.render(piece_text, True, BLACK)
-                    text_rect = text.get_rect(center=hex_to_pixel(hex))
-                    surface.blit(text, text_rect)
+                    piece_image = piece_images[piece_str]
+                    piece_rect = piece_image.get_rect(center=hex_to_pixel(hex))
+                    surface.blit(piece_image, piece_rect)
+
+    # Highlight selected hex
+    if selected_hex:
+        x, y = hex_to_pixel(selected_hex)
+        points = [
+            (x + HEX_SIDE / 1, y),
+            (x + HEX_SIDE / 2, y + HEX_APOTHEM),
+            (x - HEX_SIDE / 2, y + HEX_APOTHEM),
+            (x - HEX_SIDE / 1, y),
+            (x - HEX_SIDE / 2, y - HEX_APOTHEM),
+            (x + HEX_SIDE / 2, y - HEX_APOTHEM),
+        ]
+        pygame.draw.polygon(surface, BLACK, points, 3)  # Highlight with thicker black line
+
+    # Highlight possible moves
+    if possible_moves:
+        for move in possible_moves:
+            x, y = hex_to_pixel(move)
+            points = [
+                (x + HEX_SIDE / 1, y),
+                (x + HEX_SIDE / 2, y + HEX_APOTHEM),
+                (x - HEX_SIDE / 2, y + HEX_APOTHEM),
+                (x - HEX_SIDE / 1, y),
+                (x - HEX_SIDE / 2, y - HEX_APOTHEM),
+                (x + HEX_SIDE / 2, y - HEX_APOTHEM),
+            ]
+            pygame.draw.polygon(surface, HIGHLIGHT_COLOR, points, 3)  # Highlight with yellow border
 
 def main():
     pygame.init()
@@ -107,7 +133,11 @@ def main():
     clock = pygame.time.Clock()
     board = Board()
 
+    # Load piece images
+    piece_images = load_piece_images("images")
+
     selected_hex = None
+    possible_moves = None
     running = True
     while running:
         for event in pygame.event.get():
@@ -120,10 +150,9 @@ def main():
                     if selected_hex is None:
                         if board.is_occupied(clicked_hex) and board.get_piece(clicked_hex).color == board.current_player:
                             selected_hex = clicked_hex
+                            possible_moves = board.get_possible_moves(selected_hex)
                     elif clicked_hex != selected_hex:
                         try:
-                            possible_moves = board.get_possible_moves(selected_hex)
-                            print(f"Possible moves for {selected_hex}: {possible_moves}")
                             if clicked_hex in possible_moves:
                                 temp_board = deepcopy(board)
                                 temp_board.move_piece(selected_hex, clicked_hex)
@@ -137,35 +166,28 @@ def main():
                                     if board.is_check(board.current_player):
                                         print("Check!")
                                     selected_hex = None
+                                    possible_moves = None
                                 else:
                                     print("You cannot put yourself in check")
                                     selected_hex = None
+                                    possible_moves = None
                             else:
                                 print("Invalid move")
                                 selected_hex = None
+                                possible_moves = None
                         except ValueError as e:
                             print(f"Invalid move: {e}")
                             selected_hex = None
+                            possible_moves = None
                     else:
                         selected_hex = None
+                        possible_moves = None
                 else:
                     selected_hex = None
+                    possible_moves = None
 
         screen.fill(WHITE)
-        draw_board(screen, board)
-
-        # Highlight selected hex
-        if selected_hex:
-            x, y = hex_to_pixel(selected_hex)
-            points = [
-                (x + HEX_SIDE / 1, y),
-                (x + HEX_SIDE / 2, y + HEX_APOTHEM),
-                (x - HEX_SIDE / 2, y + HEX_APOTHEM),
-                (x - HEX_SIDE / 1, y),
-                (x - HEX_SIDE / 2, y - HEX_APOTHEM),
-                (x + HEX_SIDE / 2, y - HEX_APOTHEM),
-            ]
-            pygame.draw.polygon(screen, BLACK, points, 3)  # Highlight with thicker black line
+        draw_board(screen, board, piece_images, selected_hex, possible_moves)
 
         pygame.display.flip()
         clock.tick(30)
