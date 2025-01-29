@@ -420,6 +420,35 @@ class Board:
 
         return score
 
+    def evaluate_position_for(self, player_color: str) -> float:
+        """Evaluates the board position from a specific player's perspective."""
+        score = 0
+        center = Hex(0, 0, 0)
+        for hex, piece in self.board.items():
+            value = PIECE_VALUES[piece.type]
+            distance_to_center = abs(hex - center)
+            center_bonus = (self.BOARD_RADIUS - distance_to_center) * CENTER_BONUS
+            mobility_bonus = len(self.get_possible_moves(hex)) * MOBILITY_BONUS
+            king_exposure_penalty = 0
+
+            if piece.type == "K":
+                friendly_pieces_nearby = 0
+                for direction in hex_directions:
+                    adjacent = hex + direction
+                    if self.is_valid_hex(adjacent):
+                        adjacent_piece = self.get_piece(adjacent)
+                        if adjacent_piece and adjacent_piece.color == piece.color:
+                            friendly_pieces_nearby += 1
+                king_exposure_penalty = (6 - friendly_pieces_nearby) * KING_EXPOSURE_PENALTY
+
+        piece_score = value + center_bonus + mobility_bonus - king_exposure_penalty
+        if piece.color == player_color:
+            score += piece_score
+        else:
+            score -= piece_score
+
+        return round(score, 2)  # Round to 2 decimal places
+
     def get_turn_info(self) -> str:
         """Returns a string describing the current game state."""
         return f"Move {self.move_number}, {self.current_player} to play"
@@ -513,3 +542,19 @@ class Board:
     def __str__(self):
         """Returns a formatted string representation of the board."""
         return self.display()
+
+    def format_move_history(self) -> str:
+        """Returns a formatted string of all moves played."""
+        if not self.moves_history:
+            return "No moves played"
+            
+        moves = []
+        for i, (start, end) in enumerate(self.moves_history):
+            move_num = (i // 2) + 1
+            piece = self.get_piece(end)
+            if i % 2 == 0:  # White's move
+                moves.append(f"{move_num}. {piece}{end}")
+            else:  # Black's move
+                moves.append(f"{piece}{end}")
+                
+        return " ".join(moves)
