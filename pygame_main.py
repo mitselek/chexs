@@ -4,6 +4,7 @@ from copy import deepcopy
 from hex import Hex
 from board import Board
 from utils import format_piece, load_piece_images
+import string
 
 # Constants
 BOARD_SIZE = 5  # Board size
@@ -23,6 +24,10 @@ BOARD_OFFSET_Y = WINDOW_HEIGHT // 2  # Center the board vertically
 MOVES_LIST_WIDTH = 400  # Width of the moves list panel (doubled)
 NEW_WINDOW_WIDTH = WINDOW_WIDTH + MOVES_LIST_WIDTH  # Remove space for score bar
 MOVES_LINE_HEIGHT = 24  # Height of each line in the moves list
+
+# Tile labels
+q_labels = {q: letter for q, letter in zip(range(-5, 6), string.ascii_uppercase[:11])}
+r_labels = {r: str(r + 6) for r in range(-5, 6)}
 
 # Colors
 WHITE = (255, 255, 255)
@@ -85,7 +90,7 @@ def draw_hex(surface, color, hex):
 
     # Draw coordinates on the hex
     font = pygame.font.SysFont(None, 22)
-    coord_text = font.render(f"q{hex.q} r{hex.r} s{hex.s}", True, WHITE)
+    coord_text = font.render(f"{q_labels[hex.q]}{r_labels[hex.r]}", True, WHITE)
     coord_rect = coord_text.get_rect(center=(x, y))
     surface.blit(coord_text, coord_rect)
 
