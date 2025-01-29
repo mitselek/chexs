@@ -145,19 +145,9 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
     globals()['BOARD_OFFSET_X'] = old_BOARD_OFFSET_X
 
 def draw_move_history(surface, board):
-    """Draw the move history in two columns on the left side of the screen."""
+    """Draw the move history in three columns on the left side of the screen."""
     font = pygame.font.SysFont(None, 24)
-    history_text = board.format_move_history()
-    words = history_text.split()
-    moves = []
-    
-    # Group moves into pairs (white and black)
-    for i in range(0, len(words), 2):  # Process 2 words at a time (white move + black move)
-        if i + 1 < len(words):
-            line = f"{words[i]} {words[i+1]}"
-            moves.append(line)
-        else:
-            moves.append(words[i])
+    moves = board.moves_history
     
     # Draw moves list background
     pygame.draw.rect(surface, WHITE, (0, 0, MOVES_LIST_WIDTH, WINDOW_HEIGHT))
@@ -173,13 +163,19 @@ def draw_move_history(surface, board):
     surface.blit(white_header, (10, 10))
     surface.blit(black_header, (MOVES_LIST_WIDTH // 2 + 10, 10))
     
-    # Draw moves in two columns
-    for i, move in enumerate(moves):
-        text = font.render(move, True, BLACK)
-        if i % 2 == 0:  # White's move
-            surface.blit(text, (10, 40 + (i // 2) * MOVES_LINE_HEIGHT))
-        else:  # Black's move
-            surface.blit(text, (MOVES_LIST_WIDTH // 2 + 10, 40 + (i // 2) * MOVES_LINE_HEIGHT))
+    # Draw moves in three columns
+    for i in range(0, len(moves), 2):
+        move_num = (i // 2) + 1
+        white_move = moves[i]
+        black_move = moves[i + 1] if i + 1 < len(moves) else None
+        
+        move_num_text = font.render(f"{move_num}.", True, BLACK)
+        white_move_text = font.render(f"{white_move[0]}<{white_move[1].q} {white_move[1].r} {white_move[1].s}>", True, BLACK)
+        black_move_text = font.render(f"{black_move[0]}<{black_move[1].q} {black_move[1].r} {black_move[1].s}>" if black_move else "", True, BLACK)
+        
+        surface.blit(move_num_text, (10, 40 + (i // 2) * MOVES_LINE_HEIGHT))
+        surface.blit(white_move_text, (50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
+        surface.blit(black_move_text, (MOVES_LIST_WIDTH // 2 + 50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
 
 def handle_mouse_button_down(board, mouse_pos, selected_hex, possible_moves):
     """Handle mouse button down events."""
