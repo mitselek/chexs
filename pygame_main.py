@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+# pygame_main.py
+
 import pygame
 from math import sqrt
 from copy import deepcopy
@@ -38,6 +41,36 @@ DARK_WOOD = (101, 67, 33)     # Dark wood color
 HIGHLIGHT_COLOR = (255, 255, 0)  # Yellow for highlighting moves
 COLORS = [LIGHT_WOOD, MEDIUM_WOOD, DARK_WOOD]
 
+# Column label positions
+column_label_positions = {
+    "A": Hex(-5, 5, 0),
+    "B": Hex(-4, 5, -1),
+    "C": Hex(-3, 5, -2),
+    "D": Hex(-2, 5, -3),
+    "E": Hex(-1, 5, -4),
+    "F": Hex(0, 5, -5),
+    "G": Hex(1, 4, -5),
+    "H": Hex(2, 3, -5),
+    "I": Hex(3, 2, -5),
+    "J": Hex(4, 1, -5),
+    "K": Hex(5, 0, -5),
+}
+
+# Row label positions
+row_label_positions = {
+    "11": Hex(-6, 5, 1),
+    "10": Hex(-6, 4, 2),
+    "9": Hex(-6, 3, 3),
+    "8": Hex(-6, 2, 4),
+    "7": Hex(-6, 1, 5),
+    "6": Hex(-6, 0, 6),
+    "5": Hex(-5, -1, 6),
+    "4": Hex(-4, -2, 6),
+    "3": Hex(-3, -3, 6),
+    "2": Hex(-2, -4, 6),
+    "1": Hex(-1, -5, 6),
+}
+
 def hex_to_pixel(hex):
     """Convert hex coordinates to pixel coordinates."""
     x = HEX_SIDE * (hex.q * 3/2)
@@ -74,8 +107,8 @@ def pixel_to_hex(x, y):
 
     return Hex(rounded_q, rounded_r, rounded_s)
 
-def draw_hex(surface, color, hex):
-    """Draw a hexagon at the given hex coordinates."""
+def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=None, text_color=WHITE):
+    """Draw a hexagon at the given hex coordinates with optional text."""
     x, y = hex_to_pixel(hex)
     points = [
         (x + HEX_SIDE / 1, y),
@@ -86,43 +119,13 @@ def draw_hex(surface, color, hex):
         (x + HEX_SIDE / 2, y - HEX_APOTHEM),
     ]
     pygame.draw.polygon(surface, color, points, 0)
-    pygame.draw.polygon(surface, BLACK, points, 1)  # Thin black line around hexagon
+    pygame.draw.polygon(surface, border_color, points, border_width)  # Border around hexagon
 
-    # Draw coordinates on the hex
-    font = pygame.font.SysFont(None, 22)
-    coord_text = font.render(f"{q_labels[hex.q]}{r_labels[hex.r]}", True, WHITE)
-    coord_rect = coord_text.get_rect(center=(x, y))
-    surface.blit(coord_text, coord_rect)
-
-# Column label positions
-column_label_positions = {
-    "A": Hex(-5, 5, 0),
-    "B": Hex(-4, 5, -1),
-    "C": Hex(-3, 5, -2),
-    "D": Hex(-2, 5, -3),
-    "E": Hex(-1, 5, -4),
-    "F": Hex(0, 5, -5),
-    "G": Hex(1, 4, -5),
-    "H": Hex(2, 3, -5),
-    "I": Hex(3, 2, -5),
-    "J": Hex(4, 1, -5),
-    "K": Hex(5, 0, -5),
-}
-
-# Row label positions
-row_label_positions = {
-    "11": Hex(-6, 5, 1),
-    "10": Hex(-6, 4, 2),
-    "9": Hex(-6, 3, 3),
-    "8": Hex(-6, 2, 4),
-    "7": Hex(-6, 1, 5),
-    "6": Hex(-6, 0, 6),
-    "5": Hex(-5, -1, 6),
-    "4": Hex(-4, -2, 6),
-    "3": Hex(-3, -3, 6),
-    "2": Hex(-2, -4, 6),
-    "1": Hex(-1, -5, 6),
-}
+    if text:
+        font = pygame.font.SysFont(None, 22)
+        text_surface = font.render(text, True, text_color)
+        text_rect = text_surface.get_rect(center=(x, y))
+        surface.blit(text_surface, text_rect)
 
 def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=None):
     """Draw the entire board."""
@@ -141,11 +144,12 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
             if board.is_valid_hex(hex):
                 color_index = (q + 2 * r) % 3
                 color = COLORS[color_index]
-                draw_hex(surface, color, hex)
                 piece = board.get_piece(hex)
+                text = str(piece) if piece else f"{q_labels[q]}{r_labels[r]}"
+                draw_hexagon(surface, color, hex, text=text)
+
                 if piece:
-                    piece_str = str(piece)
-                    piece_image = piece_images[piece_str]
+                    piece_image = piece_images[str(piece)]
                     piece_rect = piece_image.get_rect(center=hex_to_pixel(hex))
                     surface.blit(piece_image, piece_rect)
 
@@ -156,10 +160,6 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
         label_text = font.render(label, True, BLACK)
         x, y = hex_to_pixel(hex)
         surface.blit(label_text, (x + HEX_SIDE // 2, y))
-    # for r in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
-    #     label = font.render(r_labels[r], True, BLACK)
-    #     x, y = hex_to_pixel(Hex(-board.BOARD_RADIUS, r, board.BOARD_RADIUS - r))
-    #     surface.blit(label, (x - HEX_SIDE - 20, y - HEX_HEIGHT // 2))
 
     # Draw column labels
     for label, hex in column_label_positions.items():
@@ -169,30 +169,12 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
 
     # Highlight selected hex
     if selected_hex:
-        x, y = hex_to_pixel(selected_hex)
-        points = [
-            (x + HEX_SIDE / 1, y),
-            (x + HEX_SIDE / 2, y + HEX_APOTHEM),
-            (x - HEX_SIDE / 2, y + HEX_APOTHEM),
-            (x - HEX_SIDE / 1, y),
-            (x - HEX_SIDE / 2, y - HEX_APOTHEM),
-            (x + HEX_SIDE / 2, y - HEX_APOTHEM),
-        ]
-        pygame.draw.polygon(surface, BLACK, points, 3)  # Highlight with thicker black line
+        draw_hexagon(surface, HIGHLIGHT_COLOR, selected_hex, border_color=BLACK, border_width=3)
 
     # Highlight possible moves
     if possible_moves:
         for move in possible_moves:
-            x, y = hex_to_pixel(move)
-            points = [
-                (x + HEX_SIDE / 1, y),
-                (x + HEX_SIDE / 2, y + HEX_APOTHEM),
-                (x - HEX_SIDE / 2, y + HEX_APOTHEM),
-                (x - HEX_SIDE / 1, y),
-                (x - HEX_SIDE / 2, y - HEX_APOTHEM),
-                (x + HEX_SIDE / 2, y - HEX_APOTHEM),
-            ]
-            pygame.draw.polygon(surface, HIGHLIGHT_COLOR, points, 3)  # Highlight with yellow border
+            draw_hexagon(surface, HIGHLIGHT_COLOR, move, border_color=HIGHLIGHT_COLOR, border_width=3)
 
     # Restore original offset
     globals()['BOARD_OFFSET_X'] = old_BOARD_OFFSET_X
