@@ -109,6 +109,21 @@ column_label_positions = {
     "K": Hex(5, 0, -5),
 }
 
+# Row label positions
+row_label_positions = {
+    "11": Hex(-6, 5, 1),
+    "10": Hex(-6, 4, 2),
+    "9": Hex(-6, 3, 3),
+    "8": Hex(-6, 2, 4),
+    "7": Hex(-6, 1, 5),
+    "6": Hex(-6, 0, 6),
+    "5": Hex(-5, -1, 6),
+    "4": Hex(-4, -2, 6),
+    "3": Hex(-3, -3, 6),
+    "2": Hex(-2, -4, 6),
+    "1": Hex(-1, -5, 6),
+}
+
 def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=None):
     """Draw the entire board."""
     # Draw moves list first
@@ -134,12 +149,17 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
                     piece_rect = piece_image.get_rect(center=hex_to_pixel(hex))
                     surface.blit(piece_image, piece_rect)
 
-    # Draw row labels
     font = pygame.font.SysFont(None, 24)
-    for r in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
-        label = font.render(r_labels[r], True, BLACK)
-        x, y = hex_to_pixel(Hex(-board.BOARD_RADIUS, r, board.BOARD_RADIUS - r))
-        surface.blit(label, (x - HEX_SIDE - 20, y - HEX_HEIGHT // 2))
+
+    # Draw row labels
+    for label, hex in row_label_positions.items():
+        label_text = font.render(label, True, BLACK)
+        x, y = hex_to_pixel(hex)
+        surface.blit(label_text, (x + HEX_SIDE // 2, y))
+    # for r in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
+    #     label = font.render(r_labels[r], True, BLACK)
+    #     x, y = hex_to_pixel(Hex(-board.BOARD_RADIUS, r, board.BOARD_RADIUS - r))
+    #     surface.blit(label, (x - HEX_SIDE - 20, y - HEX_HEIGHT // 2))
 
     # Draw column labels
     for label, hex in column_label_positions.items():
