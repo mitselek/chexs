@@ -20,11 +20,8 @@ BOARD_OFFSET_X = WINDOW_WIDTH // 2  # Center the board horizontally
 BOARD_OFFSET_Y = WINDOW_HEIGHT // 2  # Center the board vertically
 
 # Add to Constants section
-MOVES_LIST_WIDTH = 200  # Width of the moves list panel
-SCORE_BAR_WIDTH = 30  # Width of the score visualization bar
-SCORE_BAR_HEIGHT = WINDOW_HEIGHT - 100  # Height of the score bar
-SCORE_BAR_MAX = 20  # Maximum score difference to show
-NEW_WINDOW_WIDTH = WINDOW_WIDTH + MOVES_LIST_WIDTH + SCORE_BAR_WIDTH  # Add space for score bar
+MOVES_LIST_WIDTH = 400  # Width of the moves list panel (doubled)
+NEW_WINDOW_WIDTH = WINDOW_WIDTH + MOVES_LIST_WIDTH  # Remove space for score bar
 MOVES_LINE_HEIGHT = 24  # Height of each line in the moves list
 
 # Colors
@@ -45,7 +42,7 @@ def hex_to_pixel(hex):
 def pixel_to_hex(x, y):
     """Convert pixel coordinates to hex coordinates."""
     # Adjust x coordinate to account for moves list panel and score bar
-    x -= (MOVES_LIST_WIDTH + SCORE_BAR_WIDTH)
+    x -= (MOVES_LIST_WIDTH)
     x -= BOARD_OFFSET_X
     y -= BOARD_OFFSET_Y
     q = (2/3 * x) / HEX_SIDE
@@ -97,12 +94,9 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
     # Draw moves list first
     draw_move_history(surface, board)
     
-    # Draw score bar
-    draw_score_bar(surface, board)
-    
-    # Offset all board drawing by MOVES_LIST_WIDTH + SCORE_BAR_WIDTH
+    # Offset all board drawing by MOVES_LIST_WIDTH
     old_BOARD_OFFSET_X = BOARD_OFFSET_X
-    globals()['BOARD_OFFSET_X'] = BOARD_OFFSET_X + MOVES_LIST_WIDTH + SCORE_BAR_WIDTH
+    globals()['BOARD_OFFSET_X'] = BOARD_OFFSET_X + MOVES_LIST_WIDTH
 
     # Draw the board
     for r in range(-board.BOARD_RADIUS, board.BOARD_RADIUS + 1):
@@ -150,91 +144,42 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
     # Restore original offset
     globals()['BOARD_OFFSET_X'] = old_BOARD_OFFSET_X
 
-def draw_score(surface, board):
-    """Draw the position scores for both players on the screen."""
-    font = pygame.font.SysFont(None, 36)
-    
-    # Get scores for both players and round to 2 decimal places
-    white_score = round(board.evaluate_position_for("white"), 2)
-    black_score = round(board.evaluate_position_for("black"), 2)
-    
-    # Create score texts
-    white_text = font.render(f"White: {white_score:.2f}", True, BLACK)
-    black_text = font.render(f"Black: {black_score:.2f}", True, BLACK)
-    
-    # Position in top corners
-    white_rect = white_text.get_rect(topleft=(20, 20))
-    black_rect = black_text.get_rect(topright=(WINDOW_WIDTH - 20, 20))
-    
-    # Draw both scores
-    surface.blit(white_text, white_rect)
-    surface.blit(black_text, black_rect)
-
 def draw_move_history(surface, board):
-    """Draw the move history in a column on the left side of the screen."""
+    """Draw the move history in two columns on the left side of the screen."""
     font = pygame.font.SysFont(None, 24)
     history_text = board.format_move_history()
     words = history_text.split()
     moves = []
     
     # Group moves into pairs (white and black)
-    for i in range(0, len(words), 3):  # Process 3 words at a time (number + white move + black move)
+    for i in range(0, len(words), 2):  # Process 2 words at a time (white move + black move)
         if i + 1 < len(words):
             line = f"{words[i]} {words[i+1]}"
-            if i + 2 < len(words):
-                line += f" {words[i+2]}"
             moves.append(line)
+        else:
+            moves.append(words[i])
     
     # Draw moves list background
     pygame.draw.rect(surface, WHITE, (0, 0, MOVES_LIST_WIDTH, WINDOW_HEIGHT))
     pygame.draw.line(surface, BLACK, (MOVES_LIST_WIDTH, 0), (MOVES_LIST_WIDTH, WINDOW_HEIGHT), 2)
     
-    # Draw title
-    title = font.render("Moves History", True, BLACK)
-    surface.blit(title, (10, 10))
-    
-    # Draw moves
-    for i, move in enumerate(moves):
-        text = font.render(move, True, BLACK)
-        surface.blit(text, (10, 40 + i * MOVES_LINE_HEIGHT))
-
-def draw_score_bar(surface, board):
-    """Draw a vertical bar showing the relative score between players."""
-    # Calculate scores and round to 2 decimal places
+    # Get scores for both players and round to 2 decimal places
     white_score = round(board.evaluate_position_for("white"), 2)
     black_score = round(board.evaluate_position_for("black"), 2)
-    score_diff = round(white_score - black_score, 2)
     
-    # Calculate bar properties
-    bar_x = MOVES_LIST_WIDTH + SCORE_BAR_WIDTH // 2
-    bar_y = 50  # Top margin
+    # Draw column headers with scores
+    white_header = font.render(f"White ({white_score:.2f})", True, BLACK)
+    black_header = font.render(f"Black ({black_score:.2f})", True, BLACK)
+    surface.blit(white_header, (10, 10))
+    surface.blit(black_header, (MOVES_LIST_WIDTH // 2 + 10, 10))
     
-    # Draw background bar
-    pygame.draw.rect(surface, (200, 200, 200), 
-                    (bar_x - SCORE_BAR_WIDTH//2, bar_y, 
-                     SCORE_BAR_WIDTH, SCORE_BAR_HEIGHT))
-    
-    # Calculate center point and height of colored bar
-    center_y = bar_y + SCORE_BAR_HEIGHT // 2
-    score_ratio = max(min(score_diff / SCORE_BAR_MAX, 1.0), -1.0)
-    bar_height = abs(score_ratio) * (SCORE_BAR_HEIGHT // 2)
-    
-    if score_diff > 0:  # White advantage
-        rect = (bar_x - SCORE_BAR_WIDTH//2, center_y - bar_height,
-                SCORE_BAR_WIDTH, bar_height)
-        color = (255, 255, 255)  # White
-    else:  # Black advantage
-        rect = (bar_x - SCORE_BAR_WIDTH//2, center_y,
-                SCORE_BAR_WIDTH, bar_height)
-        color = (100, 100, 100)  # Dark gray
-    
-    pygame.draw.rect(surface, color, rect)
-    pygame.draw.rect(surface, BLACK, rect, 1)  # Border
-    
-    # Draw center line
-    pygame.draw.line(surface, BLACK,
-                    (bar_x - SCORE_BAR_WIDTH//2, center_y),
-                    (bar_x + SCORE_BAR_WIDTH//2, center_y))
+    # Draw moves in two columns
+    for i, move in enumerate(moves):
+        text = font.render(move, True, BLACK)
+        if i % 2 == 0:  # White's move
+            surface.blit(text, (10, 40 + (i // 2) * MOVES_LINE_HEIGHT))
+        else:  # Black's move
+            surface.blit(text, (MOVES_LIST_WIDTH // 2 + 10, 40 + (i // 2) * MOVES_LINE_HEIGHT))
 
 def handle_mouse_button_down(board, mouse_pos, selected_hex, possible_moves):
     """Handle mouse button down events."""
@@ -298,7 +243,6 @@ def main():
         if redraw:
             screen.fill(WHITE)
             draw_board(screen, board, piece_images, selected_hex, possible_moves)
-            draw_score(screen, board)
             pygame.display.flip()
             redraw = False  # Reset redraw flag after drawing
 

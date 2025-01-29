@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# board.py
+
 from hex import Hex, hex_directions
 from piece import Piece
 from piece_moves import * # Import all piece movement functions
@@ -550,11 +552,7 @@ class Board:
             
         moves = []
         for i, (start, end) in enumerate(self.moves_history):
-            move_num = (i // 2) + 1
             piece = self.get_piece(end)
-            if i % 2 == 0:  # White's move
-                moves.append(f"{move_num}. {piece}{end}")
-            else:  # Black's move
-                moves.append(f"{piece}{end}")
+            moves.append(f"{piece}{end}")
                 
         return " ".join(moves)
