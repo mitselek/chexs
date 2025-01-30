@@ -69,6 +69,36 @@ class Board:
         ((1, -1, 0), (0, -1, 1)),  # SE, S
     ]
 
+    # Column label positions
+    column_label_positions = {
+        "A": Hex(-5, 5, 0),
+        "B": Hex(-4, 5, -1),
+        "C": Hex(-3, 5, -2),
+        "D": Hex(-2, 5, -3),
+        "E": Hex(-1, 5, -4),
+        "F": Hex(0, 5, -5),
+        "G": Hex(1, 4, -5),
+        "H": Hex(2, 3, -5),
+        "I": Hex(3, 2, -5),
+        "J": Hex(4, 1, -5),
+        "K": Hex(5, 0, -5),
+    }
+
+    # Row label positions
+    row_label_positions = {
+        "11": Hex(-6, 5, 1),
+        "10": Hex(-6, 4, 2),
+        "9": Hex(-6, 3, 3),
+        "8": Hex(-6, 2, 4),
+        "7": Hex(-6, 1, 5),
+        "6": Hex(-6, 0, 6),
+        "5": Hex(-5, -1, 6),
+        "4": Hex(-4, -2, 6),
+        "3": Hex(-3, -3, 6),
+        "2": Hex(-2, -4, 6),
+        "1": Hex(-1, -5, 6),
+    }
+
     def __init__(self):
         """Initializes the board and sets up the pieces."""
         self.board = {}  # Dictionary: {Hex: Piece}

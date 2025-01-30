@@ -71,6 +71,13 @@ row_label_positions = {
     "1": Hex(-1, -5, 6),
 }
 
+class GameState:
+    """Encapsulates the core game state."""
+    def __init__(self):
+        self.board = Board()
+        self.selected_hex = None
+        self.possible_moves = None
+
 def hex_to_pixel(hex):
     """Convert hex coordinates to pixel coordinates."""
     x = HEX_SIDE * (hex.q * 3/2)
@@ -80,7 +87,7 @@ def hex_to_pixel(hex):
 def pixel_to_hex(x, y):
     """Convert pixel coordinates to hex coordinates."""
     # Adjust x coordinate to account for moves list panel and score bar
-    x -= (MOVES_LIST_WIDTH)
+    x -= MOVES_LIST_WIDTH
     x -= BOARD_OFFSET_X
     y -= BOARD_OFFSET_Y
     q = (2/3 * x) / HEX_SIDE
@@ -97,7 +104,7 @@ def pixel_to_hex(x, y):
     r_diff = abs(rounded_r - r)
     s_diff = abs(rounded_s - s)
 
-    # Adjust the rounded value with the largest difference to ensure rq + rr + rs == 0
+    # Adjust the rounded value with the largest difference to ensure q + r + s == 0
     if q_diff > r_diff and q_diff > s_diff:
         rounded_q = -rounded_r - rounded_s
     elif r_diff > s_diff:
@@ -127,8 +134,12 @@ def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=N
         text_rect = text_surface.get_rect(center=(x, y))
         surface.blit(text_surface, text_rect)
 
-def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=None):
+def draw_board(surface, game_state, piece_images):
     """Draw the entire board."""
+    board = game_state.board
+    selected_hex = game_state.selected_hex
+    possible_moves = game_state.possible_moves
+
     # Draw moves list first
     draw_move_history(surface, board)
     
@@ -156,13 +167,13 @@ def draw_board(surface, board, piece_images, selected_hex=None, possible_moves=N
     font = pygame.font.SysFont(None, 24)
 
     # Draw row labels
-    for label, hex in row_label_positions.items():
+    for label, hex in board.row_label_positions.items():
         label_text = font.render(label, True, BLACK)
         x, y = hex_to_pixel(hex)
         surface.blit(label_text, (x + HEX_SIDE // 2, y))
 
     # Draw column labels
-    for label, hex in column_label_positions.items():
+    for label, hex in board.column_label_positions.items():
         label_text = font.render(label, True, BLACK)
         x, y = hex_to_pixel(hex)
         surface.blit(label_text, (x, y + HEX_HEIGHT // 2 + 10))
@@ -212,8 +223,12 @@ def draw_move_history(surface, board):
         surface.blit(white_move_text, (50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
         surface.blit(black_move_text, (MOVES_LIST_WIDTH // 2 + 50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
 
-def handle_mouse_button_down(board, mouse_pos, selected_hex, possible_moves):
+def handle_mouse_button_down(game_state, mouse_pos):
     """Handle mouse button down events."""
+    board = game_state.board
+    selected_hex = game_state.selected_hex
+    possible_moves = game_state.possible_moves
+
     clicked_hex = pixel_to_hex(*mouse_pos)  # Unpack mouse_pos tuple
     if not board.is_valid_hex(clicked_hex):
         return None, None
@@ -252,13 +267,11 @@ def main():
     screen = pygame.display.set_mode((NEW_WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("Gliński's Hexagonal Chess")
     clock = pygame.time.Clock()
-    board = Board()
+    game_state = GameState()
 
     # Load piece images
     piece_images = load_piece_images("images")
 
-    selected_hex = None
-    possible_moves = None
     running = True
     redraw = True  # Flag to indicate if the screen needs to be redrawn
     while running:
@@ -266,14 +279,14 @@ def main():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                new_selected_hex, new_possible_moves = handle_mouse_button_down(board, pygame.mouse.get_pos(), selected_hex, possible_moves)
-                if new_selected_hex != selected_hex or new_possible_moves != possible_moves:
-                    selected_hex, possible_moves = new_selected_hex, new_possible_moves
+                new_selected_hex, new_possible_moves = handle_mouse_button_down(game_state, pygame.mouse.get_pos())
+                if new_selected_hex != game_state.selected_hex or new_possible_moves != game_state.possible_moves:
+                    game_state.selected_hex, game_state.possible_moves = new_selected_hex, new_possible_moves
                     redraw = True  # Set redraw flag when there is a mouse event
 
         if redraw:
             screen.fill(WHITE)
-            draw_board(screen, board, piece_images, selected_hex, possible_moves)
+            draw_board(screen, game_state, piece_images)
             pygame.display.flip()
             redraw = False  # Reset redraw flag after drawing
 
