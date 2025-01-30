@@ -39,7 +39,7 @@ BLACK = (0, 0, 0)
 LIGHT_WOOD = (222, 184, 135)  # Light wood color
 MEDIUM_WOOD = (160, 82, 45)   # Medium wood color
 DARK_WOOD = (101, 67, 33)     # Dark wood color
-HIGHLIGHT_COLOR = (255, 255, 0)  # Yellow for highlighting moves
+HIGHLIGHT_COLOR = (255, 255, 255)  # For highlighting moves
 COLORS = [LIGHT_WOOD, MEDIUM_WOOD, DARK_WOOD]
 
 # Column label positions
@@ -115,6 +115,13 @@ def pixel_to_hex(x, y):
 
     return Hex(rounded_q, rounded_r, rounded_s)
 
+def mix_color(base_color, mix_color, mix_amount):
+    """Mix a given amount of mix_color into base_color."""
+    return tuple(
+        int(base_color[i] * (1 - mix_amount) + mix_color[i] * mix_amount)
+        for i in range(3)
+    )
+
 def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=None, text_color=WHITE, fill=True, highlight=False):
     """Draw a hexagon at the given hex coordinates with optional text."""
     x, y = hex_to_pixel(hex)
@@ -149,6 +156,8 @@ def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=N
         if highlight:
             # Recalculate colors for each side based on light source reoriented by 180 degrees
             side_colors = side_colors[-3:] + side_colors[:-3]
+            # Mix 10% of the HIGHLIGHT_COLOR into the base color
+            color = mix_color(color, HIGHLIGHT_COLOR, 0.4)
 
         # Draw the hexagon fill with 3D effect
         for i in range(6):
