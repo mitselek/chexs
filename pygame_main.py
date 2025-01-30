@@ -221,12 +221,16 @@ def draw_board(surface, game_state, piece_images):
 
     # Highlight selected hex
     if selected_hex:
-        draw_hexagon(surface, color=None, hex=selected_hex, border_color=HIGHLIGHT_COLOR, border_width=1, fill=False)
+        color_index = (selected_hex.q + 2 * selected_hex.r) % 3
+        color = COLORS[color_index]
+        draw_hexagon(surface, color, hex=selected_hex, highlight=True)
 
     # Highlight possible moves
     if possible_moves:
         for move in possible_moves:
-            draw_hexagon(surface, color=None, hex=move, border_color=HIGHLIGHT_COLOR, border_width=1, fill=False)
+            color_index = (move.q + 2 * move.r) % 3
+            color = COLORS[color_index]
+            draw_hexagon(surface, color, hex=move, highlight=True, border_width=1, fill=False)
 
     # Restore original offset
     globals()['BOARD_OFFSET_X'] = old_BOARD_OFFSET_X
