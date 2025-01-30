@@ -114,7 +114,7 @@ def pixel_to_hex(x, y):
 
     return Hex(rounded_q, rounded_r, rounded_s)
 
-def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=None, text_color=WHITE):
+def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=None, text_color=WHITE, fill=True):
     """Draw a hexagon at the given hex coordinates with optional text."""
     x, y = hex_to_pixel(hex)
     points = [
@@ -125,7 +125,8 @@ def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=N
         (x - HEX_SIDE / 2, y - HEX_APOTHEM),
         (x + HEX_SIDE / 2, y - HEX_APOTHEM),
     ]
-    pygame.draw.polygon(surface, color, points, 0)
+    if fill:
+        pygame.draw.polygon(surface, color, points, 0)
     pygame.draw.polygon(surface, border_color, points, border_width)  # Border around hexagon
 
     if text:
@@ -180,12 +181,12 @@ def draw_board(surface, game_state, piece_images):
 
     # Highlight selected hex
     if selected_hex:
-        draw_hexagon(surface, HIGHLIGHT_COLOR, selected_hex, border_color=BLACK, border_width=3)
+        draw_hexagon(surface, color=None, hex=selected_hex, border_color=HIGHLIGHT_COLOR, border_width=3, fill=False)
 
     # Highlight possible moves
     if possible_moves:
         for move in possible_moves:
-            draw_hexagon(surface, HIGHLIGHT_COLOR, move, border_color=HIGHLIGHT_COLOR, border_width=3)
+            draw_hexagon(surface, color=None, hex=move, border_color=HIGHLIGHT_COLOR, border_width=3, fill=False)
 
     # Restore original offset
     globals()['BOARD_OFFSET_X'] = old_BOARD_OFFSET_X
