@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # board.py
 
+import string  # Add this import
 from hex import Hex, hex_directions
 from piece import Piece
 from piece_moves import * # Import all piece movement functions
@@ -99,13 +100,17 @@ class Board:
         "1": Hex(-1, -5, 6),
     }
 
+    # Tile labels
+    q_labels = {q: letter for q, letter in zip(range(-5, 6), string.ascii_uppercase[:11])}
+    r_labels = {r: str(r + 6) for r in range(-5, 6)}
+
     def __init__(self):
         """Initializes the board and sets up the pieces."""
         self.board = {}  # Dictionary: {Hex: Piece}
         self._king_positions = {"white": None, "black": None}  # Initialize before setup_board
         self.current_player = "white"
         self.move_number = 1  # Start at move 1
-        self.moves_history = []  # List of (start_hex, end_hex) tuples
+        self.moves_history = []  # List of (start_hex, end_hex, move_str) tuples
         self.setup_board()  # Call setup_board last
         self._move_cache = {}  # Cache for possible moves
 
@@ -201,7 +206,7 @@ class Board:
 
     def move_piece(self, start_hex, end_hex):
         """Moves a piece from one hex to another and updates game state."""
-        print(f"Attempting to move piece from {start_hex} to {end_hex}")  # Debug line
+        # print(f"Attempting to move piece from {start_hex} to {end_hex}")  # Debug line
         piece = self.get_piece(start_hex)
         if piece.color != self.current_player:
             raise ValueError(f"It's {self.current_player}'s turn to move")
@@ -213,8 +218,9 @@ class Board:
         if piece.type == "K":
             self._king_positions[piece.color] = end_hex
         
-        # Record the move
-        self.moves_history.append((start_hex, end_hex))
+        # Record the move in algebraic notation
+        move_str = self.format_move(piece, start_hex, end_hex)
+        self.moves_history.append((start_hex, end_hex, move_str))
         
         # Update turn counter if black just moved
         if self.current_player == "black":
@@ -238,7 +244,7 @@ class Board:
         if hex in self._move_cache:
             return self._move_cache[hex]
 
-        print(f"Getting possible moves for piece at {hex}")  # Debug line
+        # print(f"Getting possible moves for piece at {hex}")  # Debug line
         piece = self.get_piece(hex)
         if piece is None or piece.color != self.current_player:
             return set()
@@ -282,7 +288,7 @@ class Board:
         Returns:
             set: Valid destination hexes for the pawn
         """
-        print(f"Calculating pawn moves for piece at {piece.position}")  # Debug line
+        # print(f"Calculating pawn moves for piece at {piece.position}")  # Debug line
         moves = set()
         forward = hex_directions[0] if piece.color == "white" else hex_directions[3]
         one_step = piece.position + forward  # Using __add__
@@ -575,14 +581,9 @@ class Board:
         """Returns a formatted string representation of the board."""
         return self.display()
 
-    def format_move_history(self) -> str:
-        """Returns a formatted string of all moves played."""
-        if not self.moves_history:
-            return "No moves played"
-            
-        moves = []
-        for i, (start, end) in enumerate(self.moves_history):
-            piece = self.get_piece(end)
-            moves.append(f"{piece}{end}")
-                
-        return " ".join(moves)
+    def format_move(self, piece, start_hex, end_hex):
+        """Formats a move in algebraic notation."""
+        piece_str = piece.type if piece.type != "P" else ""
+        capture_str = "x" if self.is_occupied(end_hex) else ""
+        end_pos_str = f"{self.q_labels[end_hex.q]}{self.r_labels[end_hex.r]}"
+        return f"{piece_str}{capture_str}{end_pos_str}"

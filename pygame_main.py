@@ -210,18 +210,15 @@ def draw_move_history(surface, board):
     surface.blit(black_header, (MOVES_LIST_WIDTH // 2 + 10, 10))
     
     # Draw moves in three columns
-    for i in range(0, len(moves), 2):
-        move_num = (i // 2) + 1
-        white_move = moves[i]
-        black_move = moves[i + 1] if i + 1 < len(moves) else None
-        
-        move_num_text = font.render(f"{move_num}.", True, BLACK)
-        white_move_text = font.render(f"{white_move[0]}<{white_move[1].q} {white_move[1].r} {white_move[1].s}>", True, BLACK)
-        black_move_text = font.render(f"{black_move[0]}<{black_move[1].q} {black_move[1].r} {black_move[1].s}>" if black_move else "", True, BLACK)
-        
-        surface.blit(move_num_text, (10, 40 + (i // 2) * MOVES_LINE_HEIGHT))
-        surface.blit(white_move_text, (50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
-        surface.blit(black_move_text, (MOVES_LIST_WIDTH // 2 + 50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
+    for i, (start, end, move_str) in enumerate(moves):
+        if i % 2 == 0:
+            move_num_text = font.render(f"{(i // 2) + 1}.", True, BLACK)
+            surface.blit(move_num_text, (10, 40 + (i // 2) * MOVES_LINE_HEIGHT))
+            move_text = font.render(move_str, True, BLACK)
+            surface.blit(move_text, (50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
+        else:
+            move_text = font.render(move_str, True, BLACK)
+            surface.blit(move_text, (MOVES_LIST_WIDTH // 2 + 50, 40 + (i // 2) * MOVES_LINE_HEIGHT))
 
 def handle_mouse_button_down(game_state, mouse_pos):
     """Handle mouse button down events."""
