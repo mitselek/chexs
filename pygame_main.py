@@ -15,6 +15,7 @@ HEX_SIDE = 60  # Size of side of hexagon
 HEX_DIAGONAL = HEX_SIDE * 2
 HEX_APOTHEM = HEX_SIDE * (3 ** 0.5) / 2
 HEX_HEIGHT = (3 ** 0.5) * HEX_SIDE  # Twice the apothem of the hexagon
+RAISE3D = 0.9  # Factor to raise the 3D effect
 
 BOARD_BORDER = 10  # Border around the board
 BOARD_PADDING = 10  # Padding between board and window edge
@@ -114,7 +115,7 @@ def pixel_to_hex(x, y):
 
     return Hex(rounded_q, rounded_r, rounded_s)
 
-def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=None, text_color=WHITE, fill=True):
+def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=None, text_color=WHITE, fill=True, highlight=False):
     """Draw a hexagon at the given hex coordinates with optional text."""
     x, y = hex_to_pixel(hex)
     points = [
@@ -131,15 +132,23 @@ def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=N
         highlight_color = (255, 255, 255)  # Light color for highlights
         shadow_color = (0, 0, 0)  # Dark color for shadows
 
-        # Calculate colors for each side based on light source reoriented by 180 degrees
+        # Calculate gradient for highlights and shadows
+        # 3D effect is achieved by changing the color of each side based on the light source
+        # The light source is assumed to be coming from NE direction
+        # The brightest color is 3 parts of the original color plus 2 parts of the highlight color
+        # The darkest color is 2 parts of the original color plus 3 parts of the shadow color
         side_colors = [
-            (max(color[0] - 60, 0), max(color[1] - 60, 0), max(color[2] - 60, 0)),  # Top-right (shadow)
-            (max(color[0] - 40, 0), max(color[1] - 40, 0), max(color[2] - 40, 0)),  # Bottom-right (shadow)
-            (max(color[0] - 20, 0), max(color[1] - 20, 0), max(color[2] - 20, 0)),  # Bottom (shadow)
-            color,  # Bottom-left
-            (min(color[0] + 20, 255), min(color[1] + 20, 255), min(color[2] + 20, 255)),  # Top-left (highlight)
-            (min(color[0] + 40, 255), min(color[1] + 40, 255), min(color[2] + 40, 255)),  # Top (highlight)
+            tuple(int(4 * color[i] + 1 * highlight_color[i]) // 5 for i in range(3)),  # Bottom-right (highlight)
+            tuple(int(3 * color[i] + 2 * shadow_color[i]) // 5 for i in range(3)),  # Bottom (shadow)
+            tuple(int(2 * color[i] + 3 * shadow_color[i]) // 5 for i in range(3)),  # Bottom-left (deep shadow)
+            tuple(int(3 * color[i] + 2 * shadow_color[i]) // 5 for i in range(3)),  # Top-left (shadow)
+            tuple(int(3 * color[i] + 2 * highlight_color[i]) // 5 for i in range(3)),  # Top (highlight)
+            tuple(int(1 * color[i] + 4 * highlight_color[i]) // 5 for i in range(3)),  # Top-right (direct highlight)
         ]
+
+        if highlight:
+            # Recalculate colors for each side based on light source reoriented by 180 degrees
+            side_colors = side_colors[-3:] + side_colors[:-3]
 
         # Draw the hexagon fill with 3D effect
         for i in range(6):
@@ -151,12 +160,12 @@ def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=N
     if fill:
         # Draw a slightly smaller hexagon with uniform fill on top
         smaller_points = [
-            ((x + HEX_SIDE * 0.9 / 1), y),
-            ((x + HEX_SIDE * 0.9 / 2), (y + HEX_APOTHEM * 0.9)),
-            ((x - HEX_SIDE * 0.9 / 2), (y + HEX_APOTHEM * 0.9)),
-            ((x - HEX_SIDE * 0.9 / 1), y),
-            ((x - HEX_SIDE * 0.9 / 2), (y - HEX_APOTHEM * 0.9)),
-            ((x + HEX_SIDE * 0.9 / 2), (y - HEX_APOTHEM * 0.9)),
+            ((x + HEX_SIDE * RAISE3D / 1), y),
+            ((x + HEX_SIDE * RAISE3D / 2), (y + HEX_APOTHEM * RAISE3D)),
+            ((x - HEX_SIDE * RAISE3D / 2), (y + HEX_APOTHEM * RAISE3D)),
+            ((x - HEX_SIDE * RAISE3D / 1), y),
+            ((x - HEX_SIDE * RAISE3D / 2), (y - HEX_APOTHEM * RAISE3D)),
+            ((x + HEX_SIDE * RAISE3D / 2), (y - HEX_APOTHEM * RAISE3D)),
         ]
         pygame.draw.polygon(surface, color, smaller_points, 0)
 
@@ -212,12 +221,12 @@ def draw_board(surface, game_state, piece_images):
 
     # Highlight selected hex
     if selected_hex:
-        draw_hexagon(surface, color=None, hex=selected_hex, border_color=HIGHLIGHT_COLOR, border_width=3, fill=False)
+        draw_hexagon(surface, color=None, hex=selected_hex, border_color=HIGHLIGHT_COLOR, border_width=1, fill=False)
 
     # Highlight possible moves
     if possible_moves:
         for move in possible_moves:
-            draw_hexagon(surface, color=None, hex=move, border_color=HIGHLIGHT_COLOR, border_width=3, fill=False)
+            draw_hexagon(surface, color=None, hex=move, border_color=HIGHLIGHT_COLOR, border_width=1, fill=False)
 
     # Restore original offset
     globals()['BOARD_OFFSET_X'] = old_BOARD_OFFSET_X
