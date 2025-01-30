@@ -125,9 +125,40 @@ def draw_hexagon(surface, color, hex, border_color=BLACK, border_width=1, text=N
         (x - HEX_SIDE / 2, y - HEX_APOTHEM),
         (x + HEX_SIDE / 2, y - HEX_APOTHEM),
     ]
+    
+    if color is not None:
+        # Define colors for highlights and shadows
+        highlight_color = (255, 255, 255)  # Light color for highlights
+        shadow_color = (0, 0, 0)  # Dark color for shadows
+
+        # Calculate colors for each side based on light source reoriented by 180 degrees
+        side_colors = [
+            (max(color[0] - 60, 0), max(color[1] - 60, 0), max(color[2] - 60, 0)),  # Top-right (shadow)
+            (max(color[0] - 40, 0), max(color[1] - 40, 0), max(color[2] - 40, 0)),  # Bottom-right (shadow)
+            (max(color[0] - 20, 0), max(color[1] - 20, 0), max(color[2] - 20, 0)),  # Bottom (shadow)
+            color,  # Bottom-left
+            (min(color[0] + 20, 255), min(color[1] + 20, 255), min(color[2] + 20, 255)),  # Top-left (highlight)
+            (min(color[0] + 40, 255), min(color[1] + 40, 255), min(color[2] + 40, 255)),  # Top (highlight)
+        ]
+
+        # Draw the hexagon fill with 3D effect
+        for i in range(6):
+            pygame.draw.polygon(surface, side_colors[i], [points[i], points[(i + 1) % 6], (x, y)])
+
+    # Draw the hexagon border
+    pygame.draw.polygon(surface, border_color, points, border_width)
+
     if fill:
-        pygame.draw.polygon(surface, color, points, 0)
-    pygame.draw.polygon(surface, border_color, points, border_width)  # Border around hexagon
+        # Draw a slightly smaller hexagon with uniform fill on top
+        smaller_points = [
+            ((x + HEX_SIDE * 0.9 / 1), y),
+            ((x + HEX_SIDE * 0.9 / 2), (y + HEX_APOTHEM * 0.9)),
+            ((x - HEX_SIDE * 0.9 / 2), (y + HEX_APOTHEM * 0.9)),
+            ((x - HEX_SIDE * 0.9 / 1), y),
+            ((x - HEX_SIDE * 0.9 / 2), (y - HEX_APOTHEM * 0.9)),
+            ((x + HEX_SIDE * 0.9 / 2), (y - HEX_APOTHEM * 0.9)),
+        ]
+        pygame.draw.polygon(surface, color, smaller_points, 0)
 
     if text:
         font = pygame.font.SysFont(None, 22)
