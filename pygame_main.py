@@ -224,13 +224,23 @@ def draw_board(surface, game_state, piece_images):
         color_index = (selected_hex.q + 2 * selected_hex.r) % 3
         color = COLORS[color_index]
         draw_hexagon(surface, color, hex=selected_hex, highlight=True)
+        piece = board.get_piece(selected_hex)
+        if piece:
+            piece_image = piece_images[str(piece)]
+            piece_rect = piece_image.get_rect(center=hex_to_pixel(selected_hex))
+            surface.blit(piece_image, piece_rect)
 
     # Highlight possible moves
     if possible_moves:
         for move in possible_moves:
             color_index = (move.q + 2 * move.r) % 3
             color = COLORS[color_index]
-            draw_hexagon(surface, color, hex=move, highlight=True, border_width=1, fill=False)
+            draw_hexagon(surface, color, hex=move, highlight=True, border_width=1)
+            piece = board.get_piece(move)
+            if piece:
+                piece_image = piece_images[str(piece)]
+                piece_rect = piece_image.get_rect(center=hex_to_pixel(move))
+                surface.blit(piece_image, piece_rect)
 
     # Restore original offset
     globals()['BOARD_OFFSET_X'] = old_BOARD_OFFSET_X
